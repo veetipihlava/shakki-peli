@@ -1,55 +1,82 @@
 package utilities
 
 import (
-	"errors"
-
 	"github.com/veetipihlava/shakki-peli/internal/chess"
 	"github.com/veetipihlava/shakki-peli/internal/database"
 )
 
-func GetChessGameState(db *database.DatabaseService, firstPlayer int64, secondPlayer int64) (chess.Game, error) {
-	errorGame := chess.Game{}
-
-	game, err := db.ReadGame(firstPlayer, secondPlayer)
+// Creates chess game and returns the white player, black player and
+func CreateNewChessGame(db *database.DatabaseService, whiteUserID int64, blackUserID int64) (int64, error) {
+	gameID, err := db.CreateGame()
 	if err != nil {
-		return errorGame, err
-	}
-	if game == nil {
-		return errorGame, errors.New("no game exists for these players")
+		return 0, err
 	}
 
-	whitePlayer, err := db.ReadPlayer(game.WhitePlayerID)
+	err = db.CreatePlayer(gameID, whiteUserID, chess.White)
 	if err != nil {
-		return errorGame, err
-	}
-	if whitePlayer == nil {
-		return errorGame, errors.New("no white player exists")
+		return 0, err
 	}
 
-	blackPlayer, err := db.ReadPlayer(game.BlackPlayerID)
+	err = db.CreatePlayer(gameID, blackUserID, chess.Black)
 	if err != nil {
-		return errorGame, err
-	}
-	if blackPlayer == nil {
-		return errorGame, errors.New("no black player exists")
+		return 0, err
 	}
 
-	pieces, err := db.ReadPieces(game.ID)
+	initialPieces := chess.GetInitialChessGamePieces(gameID)
+	err = db.CreatePieces(initialPieces)
 	if err != nil {
-		return errorGame, err
+		return 0, err
 	}
 
-	moves, err := db.ReadMoves(game.ID)
+	return gameID, nil
+}
+
+// Reads chess game from database.
+func readChessGame(db *database.DatabaseService, gameID int64) (*chess.Game, error) {
+	pieces, err := db.ReadPieces(gameID)
 	if err != nil {
-		return errorGame, err
+		return nil, err
 	}
 
-	chessGame := chess.Game{
-		WhitePlayer: *whitePlayer,
-		BlackPlayer: *blackPlayer,
-		Pieces:      pieces,
-		History:     moves,
+	moves, err := db.ReadMoves(gameID)
+	if err != nil {
+		return nil, err
+	}
+
+	chessGame := &chess.Game{
+		Pieces: pieces,
+		Moves:  moves,
 	}
 
 	return chessGame, nil
+}
+
+// Processes the chess move and updates the database. Returns if the move is valid.
+func ProcessChessMove(db *database.DatabaseService, userID int64, gameID int64, move string) (chess.ValidationResult, error) {
+	game, err := readChessGame(db, gameID)
+	if err != nil {
+		return chess.ValidationResult{}, err
+	}
+
+	player, err := db.ReadPlayer(userID, gameID)
+	if err != nil {
+		return chess.ValidationResult{}, err
+	}
+
+	validationResult, piecesToUpdate := chess.ValidateMove(*game, move, player.Color)
+	for _, pieceUpdate := range piecesToUpdate {
+		if pieceUpdate.DeletePiece {
+			err = db.DeletePiece(pieceUpdate.Piece.ID)
+			if err != nil {
+				return validationResult, err
+			}
+		} else {
+			err = db.UpdatePiece(pieceUpdate.Piece)
+			if err != nil {
+				return validationResult, err
+			}
+		}
+	}
+
+	return validationResult, nil
 }

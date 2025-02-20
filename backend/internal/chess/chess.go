@@ -10,10 +10,8 @@ import (
 // TODO: Castling, en passant, pawn promotion, checkmate
 
 type Game struct {
-	WhitePlayer models.Player
-	BlackPlayer models.Player
-	Pieces      []models.Piece
-	History     []models.Move
+	Pieces []models.Piece
+	Moves  []models.Move
 }
 
 // GetConsumedPiece takes a move string, extracts the destination position, and returns the piece at that position if one exists.
@@ -26,28 +24,48 @@ func GetConsumedPiece(move string, state Game) *models.Piece {
 	return getPiece(toFile, toRank, state)
 }
 
-// ValidateMove validates whether a given move is applicable given the game state.
-func ValidateMove(playerID int64, move string, state Game) bool {
+type GameOver struct {
+	Draw      bool
+	Checkmate bool
+	Winner    bool
+}
 
-	// Is the move format valid?
+type ValidationResult struct {
+	IsValidMove bool
+	Check       bool
+	GameOver    GameOver
+}
+
+type PieceUpdate struct {
+	DeletePiece bool
+	Piece       models.Piece
+}
+
+// ValidateMove validates whether a given move is applicable given the game state.
+func ValidateMove(game Game, move string, color bool) (ValidationResult, []PieceUpdate) {
+	var validationResult ValidationResult
 	fromFile, fromRank, toFile, toRank, pieceName := parseMoveFromString(move)
 	if fromFile == -1 || fromRank == -1 || toFile == -1 || toRank == -1 {
-		return false
+		validationResult.IsValidMove = false
+		return validationResult, nil
 	}
 
 	// Does the position contain a piece?
-	piece := getPiece(fromFile, fromRank, state)
+	piece := getPiece(fromFile, fromRank, game)
 	if piece == nil {
-		return false
+		validationResult.IsValidMove = false
+		return validationResult, nil
 	}
 
 	// Is the piece in the position the correct one?
-	if piece.Name != pieceName || piece.Color != getPlayerColor(playerID, state) {
-		return false
+	if piece.Name != pieceName || piece.Color != color {
+		validationResult.IsValidMove = false
+		return validationResult, nil
 	}
 
+	validationResult.IsValidMove = isValidMove(piece, toFile, toRank, game)
 	// Check that the move is valid
-	return isValidMove(piece, toFile, toRank, state)
+	return validationResult, nil
 }
 
 func isValidMove(piece *models.Piece, toFile, toRank int, state Game) bool {
@@ -225,14 +243,6 @@ func getPiece(file, rank int, state Game) *models.Piece {
 		}
 	}
 	return nil
-}
-
-// Get the Player color from ID.
-func getPlayerColor(playerID int64, state Game) bool {
-	if state.WhitePlayer.ID == playerID {
-		return true
-	}
-	return false
 }
 
 // A function that checks whether a position is already occupied by a piece with the same color.
