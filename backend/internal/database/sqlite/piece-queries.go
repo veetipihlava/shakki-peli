@@ -1,11 +1,27 @@
 package sqlite
 
-import "github.com/veetipihlava/shakki-peli/internal/models"
+import (
+	"errors"
 
-func (db *Database) CreatePiece(gameID int64, color bool, name string, rank int, file int) error {
+	"github.com/veetipihlava/shakki-peli/internal/models"
+)
+
+func (db *Database) CreatePieces(pieces []models.Piece) error {
+	if len(pieces) == 0 {
+		return errors.New("no pieces in input")
+	}
 	query := `INSERT INTO pieces (game_id, color, name, rank, file)
-              VALUES (?, ?, ?, ?, ?);`
-	_, err := db.Connection.Exec(query, gameID, color, name, rank, file)
+			  VALUES `
+
+	vals := []interface{}{}
+
+	for _, piece := range pieces {
+		query += "(?, ?, ?, ?, ?),"
+		vals = append(vals, piece.GameID, piece.Color, piece.Name, piece.Rank, piece.File)
+	}
+	query = query[0 : len(query)-1]
+
+	_, err := db.Connection.Exec(query, vals...)
 	if err != nil {
 		return err
 	}
@@ -25,7 +41,14 @@ func (db *Database) ReadPieces(gameID int64) ([]models.Piece, error) {
 	var pieces []models.Piece
 	for rows.Next() {
 		piece := models.Piece{}
-		err := rows.Scan(&piece.ID, &piece.GameID, &piece.Color, &piece.Name, &piece.Rank, &piece.File)
+		err := rows.Scan(
+			&piece.ID,
+			&piece.GameID,
+			&piece.Color,
+			&piece.Name,
+			&piece.Rank,
+			&piece.File,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -35,11 +58,11 @@ func (db *Database) ReadPieces(gameID int64) ([]models.Piece, error) {
 	return pieces, nil
 }
 
-func (db *Database) UpdatePiece(pieceID int64, rank int, file int) error {
+func (db *Database) UpdatePiece(piece models.Piece) error {
 	query := `UPDATE pieces 
-			  SET rank = ?, file = ?
+			  SET game_id = ?, color = ?, name = ?, rank = ?, file = ?
 			  WHERE id = ?;`
-	_, err := db.Connection.Exec(query, rank, file, pieceID)
+	_, err := db.Connection.Exec(query, piece.GameID, piece.Color, piece.Name, piece.Rank, piece.File, piece.ID)
 
 	return err
 }

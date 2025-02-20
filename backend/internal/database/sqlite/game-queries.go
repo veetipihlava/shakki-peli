@@ -6,26 +6,30 @@ import (
 	"github.com/veetipihlava/shakki-peli/internal/models"
 )
 
-func (db *Database) CreateGame(whitePlayer int64, blackPlayer int64) error {
-	query := `INSERT INTO games (white_player_id, black_player_id)
-              VALUES (?, ?);`
-	_, err := db.Connection.Exec(query, whitePlayer, blackPlayer)
+func (db *Database) CreateGame() (int64, error) {
+	query := `INSERT INTO games (is_over)
+              VALUES (0);`
+	result, err := db.Connection.Exec(query)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	gameID, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	return gameID, nil
 }
 
-func (db *Database) ReadGame(firstPlayer int64, secondPlayer int64) (*models.Game, error) {
+func (db *Database) ReadGame(gameID int64) (*models.Game, error) {
 	query := `SELECT *
               FROM games 
-			  WHERE (white_player_id = ? AND black_player_id = ?)
-			   	 OR (white_player_id = ? AND black_player_id = ?);`
-	row := db.Connection.QueryRow(query, firstPlayer, secondPlayer, secondPlayer, firstPlayer)
+              WHERE id = ?;`
+	row := db.Connection.QueryRow(query, gameID)
 
 	game := models.Game{}
-	err := row.Scan(&game.ID, &game.WhitePlayerID, &game.BlackPlayerID, &game.CreatedAt)
+	err := row.Scan(&game.ID, &game.IsOver, &game.CreatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil

@@ -2,17 +2,21 @@ package models
 
 import "time"
 
-type Player struct {
-	ID    int64
-	Name  string
-	Color bool
+type User struct {
+	ID   int64
+	Name string
 }
 
 type Game struct {
-	ID            int64
-	WhitePlayerID int64
-	BlackPlayerID int64
-	CreatedAt     time.Time
+	ID        int64
+	IsOver    bool
+	CreatedAt time.Time
+}
+
+type Player struct {
+	UserID int64
+	GameID int64
+	Color  bool
 }
 
 type Move struct {

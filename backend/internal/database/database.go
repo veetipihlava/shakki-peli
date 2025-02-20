@@ -4,18 +4,21 @@ import "github.com/veetipihlava/shakki-peli/internal/models"
 
 // Interface for database interactions.
 type Database interface {
-	CreatePlayer(name string, color bool) (int64, error)
-	ReadPlayer(playerID int64) (*models.Player, error)
+	CreateUser(name string) (int64, error)
+	ReadUser(userID int64) (*models.User, error)
 
-	CreateGame(whitePlayer int64, blackPlayer int64) error
-	ReadGame(firstPlayer int64, secondPlayer int64) (*models.Game, error)
+	CreatePlayer(userID int64, gameID int64, color bool) error
+	ReadPlayer(userID int64, gameID int64) (*models.Player, error)
+
+	CreateGame() (int64, error)
+	ReadGame(gameID int64) (*models.Game, error)
 
 	CreateMove(gameID int64, notation string) error
 	ReadMoves(gameID int64) ([]models.Move, error)
 
-	CreatePiece(gameID int64, color bool, name string, rank int, file int) error
+	CreatePieces(pieces []models.Piece) error
 	ReadPieces(gameID int64) ([]models.Piece, error)
-	UpdatePiece(pieceID int64, rank int, file int) error
+	UpdatePiece(piece models.Piece) error
 	DeletePiece(pieceID int64) error
 }
 
@@ -24,24 +27,34 @@ type DatabaseService struct {
 	Database Database
 }
 
+// Creates a new user.
+func (db *DatabaseService) CreateUser(name string) (int64, error) {
+	return db.Database.CreateUser(name)
+}
+
+// Reads a user.
+func (db *DatabaseService) ReadUser(userID int64) (*models.User, error) {
+	return db.Database.ReadUser(userID)
+}
+
 // Creates a new player.
-func (db *DatabaseService) CreatePlayer(name string, color bool) (int64, error) {
-	return db.Database.CreatePlayer(name, color)
+func (db *DatabaseService) CreatePlayer(userID int64, gameID int64, color bool) error {
+	return db.Database.CreatePlayer(gameID, userID, color)
 }
 
 // Reads a player.
-func (db *DatabaseService) ReadPlayer(playerID int64) (*models.Player, error) {
-	return db.Database.ReadPlayer(playerID)
+func (db *DatabaseService) ReadPlayer(userID int64, gameID int64) (*models.Player, error) {
+	return db.Database.ReadPlayer(userID, gameID)
 }
 
 // Creates a new game.
-func (db *DatabaseService) CreateGame(whitePlayer int64, blackPlayer int64) error {
-	return db.Database.CreateGame(whitePlayer, blackPlayer)
+func (db *DatabaseService) CreateGame() (int64, error) {
+	return db.Database.CreateGame()
 }
 
 // Reads a game.
-func (db *DatabaseService) ReadGame(firstPlayer int64, secondPlayer int64) (*models.Game, error) {
-	return db.Database.ReadGame(firstPlayer, secondPlayer)
+func (db *DatabaseService) ReadGame(gameID int64) (*models.Game, error) {
+	return db.Database.ReadGame(gameID)
 }
 
 // Creates a new move.
@@ -55,8 +68,8 @@ func (db *DatabaseService) ReadMoves(gameID int64) ([]models.Move, error) {
 }
 
 // Creates a new piece.
-func (db *DatabaseService) CreatePiece(gameID int64, color bool, name string, rank int, file int) error {
-	return db.Database.CreatePiece(gameID, color, name, rank, file)
+func (db *DatabaseService) CreatePieces(pieces []models.Piece) error {
+	return db.Database.CreatePieces(pieces)
 }
 
 // Reads a piece.
@@ -65,8 +78,8 @@ func (db *DatabaseService) ReadPieces(gameID int64) ([]models.Piece, error) {
 }
 
 // Updates a piece.
-func (db *DatabaseService) UpdatePiece(pieceID int64, rank int, file int) error {
-	return db.Database.UpdatePiece(pieceID, rank, file)
+func (db *DatabaseService) UpdatePiece(piece models.Piece) error {
+	return db.Database.UpdatePiece(piece)
 }
 
 // Deletes a piece.

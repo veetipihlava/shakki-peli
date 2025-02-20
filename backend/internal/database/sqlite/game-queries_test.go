@@ -11,15 +11,9 @@ func TestCreateGame(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Connection.Close()
 
-	whitePlayer := getTestPlayer("Alice", true)
-	blackPlayer := getTestPlayer("Bob", false)
-	whitePlayerID, err := db.CreatePlayer(whitePlayer.Name, whitePlayer.Color)
+	gameID, err := db.CreateGame()
 	require.NoError(t, err)
-	blackPlayerID, err := db.CreatePlayer(blackPlayer.Name, blackPlayer.Color)
-	require.NoError(t, err)
-
-	err = db.CreateGame(whitePlayerID, blackPlayerID)
-	require.NoError(t, err)
+	require.NotZero(t, gameID)
 }
 
 func TestReadGame(t *testing.T) {
@@ -27,19 +21,14 @@ func TestReadGame(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Connection.Close()
 
-	whitePlayer := getTestPlayer("Alice", true)
-	blackPlayer := getTestPlayer("Bob", false)
-	whitePlayerID, err := db.CreatePlayer(whitePlayer.Name, whitePlayer.Color)
+	gameID, err := db.CreateGame()
 	require.NoError(t, err)
-	blackPlayerID, err := db.CreatePlayer(blackPlayer.Name, blackPlayer.Color)
-	require.NoError(t, err)
+	require.NotZero(t, gameID)
 
-	err = db.CreateGame(whitePlayerID, blackPlayerID)
-	require.NoError(t, err)
-
-	game, err := db.ReadGame(whitePlayerID, blackPlayerID)
+	game, err := db.ReadGame(gameID)
 	require.NoError(t, err)
 	require.NotNil(t, game)
-	require.Equal(t, whitePlayerID, game.WhitePlayerID)
-	require.Equal(t, blackPlayerID, game.BlackPlayerID)
+	require.Equal(t, gameID, game.ID)
+	require.False(t, game.IsOver)
+	require.NotZero(t, game.CreatedAt)
 }

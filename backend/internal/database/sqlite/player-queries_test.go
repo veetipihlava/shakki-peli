@@ -3,26 +3,24 @@ package sqlite
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/veetipihlava/shakki-peli/internal/models"
+	"github.com/veetipihlava/shakki-peli/internal/chess"
 )
-
-func getTestPlayer(name string, color bool) models.Player {
-	return models.Player{
-		Name:  name,
-		Color: color,
-	}
-}
 
 func TestCreatePlayer(t *testing.T) {
 	db, err := InitializeTestDatabase()
 	require.NoError(t, err)
 	defer db.Connection.Close()
 
-	testPlayer := getTestPlayer("Alice", true)
-	playerID, err := db.CreatePlayer(testPlayer.Name, testPlayer.Color)
+	gameID, err := db.CreateGame()
 	require.NoError(t, err)
-	require.NotZero(t, playerID)
+
+	userID, err := db.CreateUser(testName)
+	require.NoError(t, err)
+
+	err = db.CreatePlayer(gameID, userID, chess.White)
+	require.NoError(t, err)
 }
 
 func TestReadPlayer(t *testing.T) {
@@ -30,13 +28,19 @@ func TestReadPlayer(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Connection.Close()
 
-	testPlayer := getTestPlayer("Alice", true)
-	playerID, err := db.CreatePlayer(testPlayer.Name, testPlayer.Color)
+	gameID, err := db.CreateGame()
 	require.NoError(t, err)
 
-	player, err := db.ReadPlayer(playerID)
+	userID, err := db.CreateUser(testName)
 	require.NoError(t, err)
-	require.NotNil(t, player)
-	require.Equal(t, testPlayer.Name, player.Name)
-	require.Equal(t, testPlayer.Color, player.Color)
+
+	err = db.CreatePlayer(gameID, userID, chess.White)
+	require.NoError(t, err)
+
+	player, err := db.ReadPlayer(gameID, userID)
+	require.NoError(t, err)
+	assert.NotNil(t, player)
+	assert.Equal(t, gameID, player.GameID)
+	assert.Equal(t, userID, player.UserID)
+	assert.Equal(t, chess.White, player.Color)
 }

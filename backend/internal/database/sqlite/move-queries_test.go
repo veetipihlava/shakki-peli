@@ -19,20 +19,10 @@ func TestCreateMove(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Connection.Close()
 
-	whitePlayer := getTestPlayer("Alice", true)
-	blackPlayer := getTestPlayer("Bob", false)
-	whitePlayerID, err := db.CreatePlayer(whitePlayer.Name, whitePlayer.Color)
-	require.NoError(t, err)
-	blackPlayerID, err := db.CreatePlayer(blackPlayer.Name, blackPlayer.Color)
+	gameID, err := db.CreateGame()
 	require.NoError(t, err)
 
-	err = db.CreateGame(whitePlayerID, blackPlayerID)
-	require.NoError(t, err)
-
-	game, err := db.ReadGame(whitePlayerID, blackPlayerID)
-	require.NoError(t, err)
-
-	testMove := getTestMove(game.ID, "e4")
+	testMove := getTestMove(gameID, "e4")
 	err = db.CreateMove(testMove.GameID, testMove.Notation)
 	require.NoError(t, err)
 }
@@ -42,25 +32,18 @@ func TestReadMoves(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Connection.Close()
 
-	whitePlayer := getTestPlayer("Alice", true)
-	blackPlayer := getTestPlayer("Bob", false)
-	whitePlayerID, err := db.CreatePlayer(whitePlayer.Name, whitePlayer.Color)
-	require.NoError(t, err)
-	blackPlayerID, err := db.CreatePlayer(blackPlayer.Name, blackPlayer.Color)
+	gameID, err := db.CreateGame()
 	require.NoError(t, err)
 
-	err = db.CreateGame(whitePlayerID, blackPlayerID)
+	testMove := getTestMove(gameID, "e4")
+	err = db.CreateMove(testMove.GameID, testMove.Notation)
 	require.NoError(t, err)
-
-	game, err := db.ReadGame(whitePlayerID, blackPlayerID)
-	require.NoError(t, err)
-
-	testMove := getTestMove(game.ID, "e4")
 	err = db.CreateMove(testMove.GameID, testMove.Notation)
 	require.NoError(t, err)
 
-	moves, err := db.ReadMoves(game.ID)
+	moves, err := db.ReadMoves(gameID)
 	require.NoError(t, err)
 	require.NotEmpty(t, moves)
+	require.Len(t, moves, 2)
 	require.Equal(t, testMove.Notation, moves[0].Notation)
 }

@@ -6,29 +6,32 @@ import (
 	"github.com/veetipihlava/shakki-peli/internal/models"
 )
 
-func (db *Database) CreatePlayer(name string, color bool) (int64, error) {
-	query := `INSERT INTO players (name, color)
-			  VALUES (?, ?);`
-	result, err := db.Connection.Exec(query, name, color)
+func (db *Database) CreatePlayer(userID int64, gameID int64, color bool) error {
+	query := `INSERT INTO players (game_id, user_id, color)
+			  VALUES (?, ?, ?);`
+	_, err := db.Connection.Exec(query, gameID, userID, color)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-
-	return id, nil
+	return nil
 }
 
-func (db *Database) ReadPlayer(playerID int64) (*models.Player, error) {
+func (db *Database) ReadPlayer(userID int64, gameID int64) (*models.Player, error) {
 	query := `SELECT *
-			  FROM players WHERE id = ?;`
-	row := db.Connection.QueryRow(query, playerID)
+			  FROM players
+			  WHERE 
+			  	user_id = ? AND game_id = ? ;`
 
-	player := models.Player{}
-	err := row.Scan(&player.ID, &player.Name, &player.Color)
+	row := db.Connection.QueryRow(query, userID, gameID)
+
+	var player models.Player
+	err := row.Scan(
+		&player.UserID,
+		&player.GameID,
+		&player.Color,
+	)
+
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
