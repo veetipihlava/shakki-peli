@@ -24,26 +24,9 @@ func GetConsumedPiece(move string, state Game) *models.Piece {
 	return getPiece(toFile, toRank, state)
 }
 
-type GameOver struct {
-	Draw      bool
-	Checkmate bool
-	Winner    bool
-}
-
-type ValidationResult struct {
-	IsValidMove bool
-	Check       bool
-	GameOver    GameOver
-}
-
-type PieceUpdate struct {
-	DeletePiece bool
-	Piece       models.Piece
-}
-
 // ValidateMove validates whether a given move is applicable given the game state.
-func ValidateMove(game Game, move string, color bool) (ValidationResult, []PieceUpdate) {
-	var validationResult ValidationResult
+func ValidateMove(game Game, move string, color bool) (models.ValidationResult, []models.PieceUpdate) {
+	var validationResult models.ValidationResult
 	fromFile, fromRank, toFile, toRank, pieceName := parseMoveFromString(move)
 	if fromFile == -1 || fromRank == -1 || toFile == -1 || toRank == -1 {
 		validationResult.IsValidMove = false
