@@ -60,7 +60,7 @@ func WriteGameEntry(db *database.DatabaseService, entry models.ChessEntry) error
 	}
 
 	// If the game is over (checkmate or draw), update the game status
-	if entry.Status.Checkmate || entry.Status.Draw {
+	if entry.GameOver.Checkmate || entry.GameOver.Draw {
 		game, err := db.ReadGame(entry.GameID)
 		if err != nil {
 			return fmt.Errorf("failed to read game for update: %v", err)

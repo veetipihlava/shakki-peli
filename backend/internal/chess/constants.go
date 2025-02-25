@@ -5,7 +5,7 @@ import "github.com/veetipihlava/shakki-peli/internal/models"
 // The boolean for white player.
 const White bool = true
 
-// Constant for readable code. The boolean for black player.
+// The boolean for black player.
 const Black bool = false
 
 // Get the initial chess board configuration.

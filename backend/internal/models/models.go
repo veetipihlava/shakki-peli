@@ -37,16 +37,16 @@ type Piece struct {
 	File   int    `json:"file"`
 }
 
-type GameStatus struct {
+type GameOver struct {
 	Draw        bool `json:"draw"`
 	Checkmate   bool `json:"checkmate"`
 	WinnerColor bool `json:"winner_color"`
-	KingInCheck bool `json:"king_in_check"`
 }
 
 type ValidationResult struct {
-	IsValidMove   bool       `json:"is_valid_move"`
-	GameSituation GameStatus `json:"game_situation"`
+	IsValidMove bool     `json:"is_valid_move"`
+	GameOver    GameOver `json:"game_situation"`
+	KingInCheck bool     `json:"king_in_check"`
 }
 
 type PieceUpdate struct {
@@ -58,6 +58,6 @@ type PieceUpdate struct {
 type ChessEntry struct {
 	GameID         int64         `json:"game_id"`
 	Move           Move          `json:"move"`
-	Status         GameStatus    `json:"status"`
+	GameOver       GameOver      `json:"status"`
 	AffectedPieces []PieceUpdate `json:"affected_pieces"`
 }

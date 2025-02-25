@@ -19,6 +19,7 @@ func GetConsumedPiece(move string, pieces []models.Piece) *models.Piece {
 // ValidateMove validates whether a given move is applicable given the game state.
 func ValidateMove(pieces []models.Piece, move string, color bool) (models.ValidationResult, []models.PieceUpdate) {
 	var validationResult models.ValidationResult
+
 	fromFile, fromRank, toFile, toRank, pieceName := parseMoveFromString(move)
 	if fromFile == -1 || fromRank == -1 || toFile == -1 || toRank == -1 {
 		validationResult.IsValidMove = false
