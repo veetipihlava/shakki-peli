@@ -6,19 +6,10 @@ import (
 
 // TODO: Castling, en passant, pawn promotion, checkmate
 
-// GetConsumedPiece takes a move string, extracts the destination position, and returns the piece at that position if one exists.
-func GetConsumedPiece(move string, pieces []models.Piece) *models.Piece {
-	_, _, toFile, toRank, _ := parseMoveFromString(move)
-	if toFile == -1 || toRank == -1 {
-		return nil
-	}
-
-	return getPiece(toFile, toRank, pieces)
-}
-
 // ValidateMove validates whether a given move is applicable given the game state.
 func ValidateMove(pieces []models.Piece, move string, color bool) (models.ValidationResult, []models.PieceUpdate) {
 	var validationResult models.ValidationResult
+	var updates []models.PieceUpdate
 
 	fromFile, fromRank, toFile, toRank, pieceName := parseMoveFromString(move)
 	if fromFile == -1 || fromRank == -1 || toFile == -1 || toRank == -1 {
@@ -39,9 +30,42 @@ func ValidateMove(pieces []models.Piece, move string, color bool) (models.Valida
 		return validationResult, nil
 	}
 
+	// Is the move valid?
 	validationResult.IsValidMove = isValidMove(piece, toFile, toRank, pieces)
-	// Check that the move is valid
-	return validationResult, nil
+	if !validationResult.IsValidMove {
+		return validationResult, nil
+	}
+	// The move is valid, so check if we consumed a piece
+	consumedUpdate := GetConsumedPiece(toFile, toRank, pieces)
+	if consumedUpdate.Piece.ID != 0 {
+		updates = append(updates, consumedUpdate)
+	}
+	// Update new position
+	updatedPiece := GetUpdatedPiece(toFile, toRank, piece)
+	updates = append(updates, updatedPiece)
+
+	return validationResult, updates
+}
+
+func GetConsumedPiece(toFile int, toRank int, pieces []models.Piece) models.PieceUpdate {
+	piece := getPiece(toFile, toRank, pieces)
+	if piece != nil {
+		return models.PieceUpdate{
+			DeletePiece: true,
+			Piece:       *piece,
+		}
+	}
+	return models.PieceUpdate{}
+}
+
+func GetUpdatedPiece(toFile int, toRank int, piece *models.Piece) models.PieceUpdate {
+	updatedPiece := *piece
+	updatedPiece.File = toFile
+	updatedPiece.Rank = toRank
+	return models.PieceUpdate{
+		DeletePiece: false,
+		Piece:       updatedPiece,
+	}
 }
 
 func isValidMove(piece *models.Piece, toFile, toRank int, pieces []models.Piece) bool {
