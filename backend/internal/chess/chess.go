@@ -4,28 +4,20 @@ import (
 	"github.com/veetipihlava/shakki-peli/internal/models"
 )
 
-// NOTE: White color is true, black color is false. Bottom left is a1 or (1,1) and white rook always starts a1!
-// Movement: 1 for up and -1 for down, 1 for right and -1 for left
-
 // TODO: Castling, en passant, pawn promotion, checkmate
 
-type Game struct {
-	Pieces []models.Piece
-	Moves  []models.Move
-}
-
 // GetConsumedPiece takes a move string, extracts the destination position, and returns the piece at that position if one exists.
-func GetConsumedPiece(move string, state Game) *models.Piece {
+func GetConsumedPiece(move string, pieces []models.Piece) *models.Piece {
 	_, _, toFile, toRank, _ := parseMoveFromString(move)
 	if toFile == -1 || toRank == -1 {
 		return nil
 	}
 
-	return getPiece(toFile, toRank, state)
+	return getPiece(toFile, toRank, pieces)
 }
 
 // ValidateMove validates whether a given move is applicable given the game state.
-func ValidateMove(game Game, move string, color bool) (models.ValidationResult, []models.PieceUpdate) {
+func ValidateMove(pieces []models.Piece, move string, color bool) (models.ValidationResult, []models.PieceUpdate) {
 	var validationResult models.ValidationResult
 	fromFile, fromRank, toFile, toRank, pieceName := parseMoveFromString(move)
 	if fromFile == -1 || fromRank == -1 || toFile == -1 || toRank == -1 {
@@ -34,7 +26,7 @@ func ValidateMove(game Game, move string, color bool) (models.ValidationResult, 
 	}
 
 	// Does the position contain a piece?
-	piece := getPiece(fromFile, fromRank, game)
+	piece := getPiece(fromFile, fromRank, pieces)
 	if piece == nil {
 		validationResult.IsValidMove = false
 		return validationResult, nil
@@ -46,36 +38,36 @@ func ValidateMove(game Game, move string, color bool) (models.ValidationResult, 
 		return validationResult, nil
 	}
 
-	validationResult.IsValidMove = isValidMove(piece, toFile, toRank, game)
+	validationResult.IsValidMove = isValidMove(piece, toFile, toRank, pieces)
 	// Check that the move is valid
 	return validationResult, nil
 }
 
-func isValidMove(piece *models.Piece, toFile, toRank int, state Game) bool {
+func isValidMove(piece *models.Piece, toFile, toRank int, pieces []models.Piece) bool {
 	switch piece.Name {
 	case "K":
-		return isValidKingMove(piece, toFile, toRank, state)
+		return isValidKingMove(piece, toFile, toRank, pieces)
 	case "Q":
-		return isValidRookMove(piece, toFile, toRank, state) || isValidBishopMove(piece, toFile, toRank, state)
+		return isValidRookMove(piece, toFile, toRank, pieces) || isValidBishopMove(piece, toFile, toRank, pieces)
 	case "R":
-		return isValidRookMove(piece, toFile, toRank, state)
+		return isValidRookMove(piece, toFile, toRank, pieces)
 	case "B":
-		return isValidBishopMove(piece, toFile, toRank, state)
+		return isValidBishopMove(piece, toFile, toRank, pieces)
 	case "N":
-		return isValidKnightMove(piece, toFile, toRank, state)
+		return isValidKnightMove(piece, toFile, toRank, pieces)
 	case "P":
-		return isValidPawnMove(piece, toFile, toRank, state)
+		return isValidPawnMove(piece, toFile, toRank, pieces)
 	default:
 		return false
 	}
 }
 
 // The King can move 1 square to any direction
-func isValidKingMove(piece *models.Piece, toFile, toRank int, state Game) bool {
+func isValidKingMove(piece *models.Piece, toFile, toRank int, pieces []models.Piece) bool {
 	fromFile, fromRank := piece.File, piece.Rank
 
 	if abs(toFile-fromFile) <= 1 && abs(toRank-fromRank) <= 1 {
-		return positionNotOccupiedByFriendly(piece, toFile, toRank, state)
+		return positionNotOccupiedByFriendly(piece, toFile, toRank, pieces)
 	}
 
 	return false
@@ -83,7 +75,7 @@ func isValidKingMove(piece *models.Piece, toFile, toRank int, state Game) bool {
 
 // Validate the Rook piece consists of checking that only either file or rank change, not both.
 // Also need to check Rook does not jump over any pieces, friend or foe
-func isValidRookMove(piece *models.Piece, toFile, toRank int, state Game) bool {
+func isValidRookMove(piece *models.Piece, toFile, toRank int, pieces []models.Piece) bool {
 	fromFile, fromRank := piece.File, piece.Rank
 
 	if fromFile != toFile && fromRank != toRank {
@@ -105,18 +97,18 @@ func isValidRookMove(piece *models.Piece, toFile, toRank int, state Game) bool {
 
 	file, rank := fromFile+fileStep, fromRank+rankStep
 	for file != toFile || rank != toRank {
-		if getPiece(file, rank, state) != nil {
+		if getPiece(file, rank, pieces) != nil {
 			return false
 		}
 		file += fileStep
 		rank += rankStep
 	}
 
-	return positionNotOccupiedByFriendly(piece, toFile, toRank, state)
+	return positionNotOccupiedByFriendly(piece, toFile, toRank, pieces)
 }
 
 // The Bishop can move diagonally, but can't jump over pieces
-func isValidBishopMove(piece *models.Piece, toFile, toRank int, state Game) bool {
+func isValidBishopMove(piece *models.Piece, toFile, toRank int, pieces []models.Piece) bool {
 	fromFile, fromRank := piece.File, piece.Rank
 
 	if abs(toFile-fromFile) != abs(toRank-fromRank) {
@@ -135,18 +127,18 @@ func isValidBishopMove(piece *models.Piece, toFile, toRank int, state Game) bool
 
 	file, rank := fromFile+fileStep, fromRank+rankStep
 	for file != toFile || rank != toRank {
-		if getPiece(file, rank, state) != nil {
+		if getPiece(file, rank, pieces) != nil {
 			return false
 		}
 		file += fileStep
 		rank += rankStep
 	}
 
-	return positionNotOccupiedByFriendly(piece, toFile, toRank, state)
+	return positionNotOccupiedByFriendly(piece, toFile, toRank, pieces)
 }
 
 // The Knight moves according to the offsets, but can't move to a position occupied by friendly.
-func isValidKnightMove(piece *models.Piece, toFile, toRank int, state Game) bool {
+func isValidKnightMove(piece *models.Piece, toFile, toRank int, pieces []models.Piece) bool {
 	fromFile, fromRank := piece.File, piece.Rank
 
 	knightMoves := []struct{ fileDiff, rankDiff int }{
@@ -156,7 +148,7 @@ func isValidKnightMove(piece *models.Piece, toFile, toRank int, state Game) bool
 
 	for _, move := range knightMoves {
 		if toFile == fromFile+move.fileDiff && toRank == fromRank+move.rankDiff {
-			return positionNotOccupiedByFriendly(piece, toFile, toRank, state)
+			return positionNotOccupiedByFriendly(piece, toFile, toRank, pieces)
 		}
 	}
 
@@ -164,7 +156,7 @@ func isValidKnightMove(piece *models.Piece, toFile, toRank int, state Game) bool
 }
 
 // The Pawn generally moves 1 step, but at start can move 2, and can move diagonally to consume another piece
-func isValidPawnMove(piece *models.Piece, toFile, toRank int, state Game) bool {
+func isValidPawnMove(piece *models.Piece, toFile, toRank int, pieces []models.Piece) bool {
 	fromFile, fromRank := piece.File, piece.Rank
 	pawnDirection := 1
 	if !piece.Color {
@@ -172,7 +164,7 @@ func isValidPawnMove(piece *models.Piece, toFile, toRank int, state Game) bool {
 	}
 
 	if fromFile == toFile {
-		if toRank == fromRank+pawnDirection && getPiece(toFile, toRank, state) == nil {
+		if toRank == fromRank+pawnDirection && getPiece(toFile, toRank, pieces) == nil {
 			return true
 		}
 
@@ -182,15 +174,15 @@ func isValidPawnMove(piece *models.Piece, toFile, toRank int, state Game) bool {
 		}
 
 		if fromRank == startingRank && toRank == fromRank+(2*pawnDirection) {
-			if getPiece(toFile, fromRank+pawnDirection, state) == nil &&
-				getPiece(toFile, toRank, state) == nil {
+			if getPiece(toFile, fromRank+pawnDirection, pieces) == nil &&
+				getPiece(toFile, toRank, pieces) == nil {
 				return true
 			}
 		}
 	}
 
 	if abs(toFile-fromFile) == 1 && toRank == fromRank+pawnDirection {
-		targetPiece := getPiece(toFile, toRank, state)
+		targetPiece := getPiece(toFile, toRank, pieces)
 		if targetPiece != nil && targetPiece.Color != piece.Color {
 			return true
 		}
@@ -199,7 +191,7 @@ func isValidPawnMove(piece *models.Piece, toFile, toRank int, state Game) bool {
 	return false
 }
 
-// Parses the move and returns the corresponding coordinates in range 1-8
+// Parses a move and returns the corresponding coordinates in range 1-8
 func parseMoveFromString(move string) (fromFile, fromRank, toFile, toRank int, pieceName string) {
 	if len(move) != 5 {
 		return -1, -1, -1, -1, ""
@@ -218,19 +210,19 @@ func parseMoveFromString(move string) (fromFile, fromRank, toFile, toRank int, p
 	return fromFile, fromRank, toFile, toRank, pieceName
 }
 
-// Get the piece object at given position
-func getPiece(file, rank int, state Game) *models.Piece {
-	for i := range state.Pieces {
-		if state.Pieces[i].File == file && state.Pieces[i].Rank == rank {
-			return &state.Pieces[i]
+// Returns the Piece at the given position, or nil if not found.
+func getPiece(file, rank int, pieces []models.Piece) *models.Piece {
+	for i := range pieces {
+		if pieces[i].File == file && pieces[i].Rank == rank {
+			return &pieces[i]
 		}
 	}
 	return nil
 }
 
-// A function that checks whether a position is already occupied by a piece with the same color.
-func positionNotOccupiedByFriendly(piece *models.Piece, toFile, toRank int, state Game) bool {
-	destPiece := getPiece(toFile, toRank, state)
+// A function that checks whether a position is not occupied by a Piece with the same color.
+func positionNotOccupiedByFriendly(piece *models.Piece, toFile, toRank int, pieces []models.Piece) bool {
+	destPiece := getPiece(toFile, toRank, pieces)
 	if destPiece != nil && destPiece.Color == piece.Color {
 		return false
 	}

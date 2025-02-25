@@ -3,7 +3,6 @@ package utilities
 import (
 	"github.com/veetipihlava/shakki-peli/internal/chess"
 	"github.com/veetipihlava/shakki-peli/internal/database"
-	"github.com/veetipihlava/shakki-peli/internal/models"
 )
 
 // Creates chess game and returns the white player, black player and returns the gameID
@@ -32,6 +31,7 @@ func CreateNewChessGame(db *database.DatabaseService, whiteUserID int64, blackUs
 	return gameID, nil
 }
 
+/*
 // Reads chess game from database.
 func readChessGame(db *database.DatabaseService, gameID int64) (*chess.Game, error) {
 	pieces, err := db.ReadPieces(gameID)
@@ -51,6 +51,7 @@ func readChessGame(db *database.DatabaseService, gameID int64) (*chess.Game, err
 
 	return chessGame, nil
 }
+
 
 // Processes the chess move and updates the database. Returns if the move is valid.
 func ProcessChessMove(db *database.DatabaseService, userID int64, gameID int64, move string) (models.ValidationResult, error) {
@@ -81,3 +82,5 @@ func ProcessChessMove(db *database.DatabaseService, userID int64, gameID int64, 
 
 	return validationResult, nil
 }
+
+*/
