@@ -25,15 +25,14 @@ func GetConsumedPiece(move string, state Game) *models.Piece {
 }
 
 type GameOver struct {
-	Draw      bool
-	Checkmate bool
-	Winner    bool
+	Draw      bool `json:"draw"`
+	Checkmate bool `json:"checkmate"`
+	Winner    bool `json:"winner"`
 }
 
 type ValidationResult struct {
-	IsValidMove bool
-	Check       bool
-	GameOver    GameOver
+	IsValidMove bool     `json:"is_valid_move"`
+	GameOver    GameOver `json:"game_over"`
 }
 
 type PieceUpdate struct {
