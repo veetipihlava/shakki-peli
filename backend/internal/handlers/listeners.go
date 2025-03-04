@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 
 	"github.com/gorilla/websocket"
@@ -25,37 +24,58 @@ func sendResponse(conn *websocket.Conn, response interface{}) {
 	}
 }
 
+// sendMessageToAllPlayers sends a response to all players in a game
+func sendMessageToAllPlayers(gameID int64, response interface{}) {
+	players := games.GameManager.GetPlayers(gameID)
+	for _, player := range players {
+		sendResponse(player.Connection, response)
+	}
+}
+
 // Send an error message to the client
 func sendErrorMessage(conn *websocket.Conn, message string) {
 	errorResponse := map[string]string{"error": message}
 	sendResponse(conn, errorResponse)
 }
 
-type ChessRequest struct {
-	Type    string `json:"type"`
-	Content string `json:"content"`
+type JoinResponse struct {
+	Name string `json:"content"`
+}
+
+// handleJoinRequest processes a join request from a player
+func handleJoinRequest(gameID int64, ws *websocket.Conn, request ChessMessage) {
+	player := games.Player{
+		Name:       request.Content,
+		ID:         request.PlayerID,
+		Connection: ws,
+	}
+
+	games.GameManager.AddPlayerToGame(gameID, player)
+
+	response := JoinResponse{
+		Name: player.Name,
+	}
+
+	sendMessageToAllPlayers(gameID, response)
 }
 
 type ValidationResponse struct {
+	Move             string                 `json:"move"`
 	ValidationResult chess.ValidationResult `json:"validation_result"`
 }
 
-// Handle a move request
-func handleMoveRequest(move string, player games.Player, gameID int64, db *database.DatabaseService) {
-	fmt.Printf("\nprocessing player: %d\n", player.ID)
-	validationResult, err := utilities.ProcessChessMove(db, player.ID, gameID, move)
+// handleMoveRequest processes a move request from a player
+func handleMoveRequest(db *database.DatabaseService, gameID int64, request ChessMessage) {
+	validationResult, err := utilities.ProcessChessMove(db, request.PlayerID, gameID, request.Content)
 	if err != nil {
-		log.Printf("error: %v", err)
-		sendErrorMessage(player.Connection, "Invalid move")
+		log.Printf("Error: %v", err)
 		return
 	}
 
 	response := ValidationResponse{
+		Move:             request.Content,
 		ValidationResult: validationResult,
 	}
 
-	players := games.GameManager.GetPlayers(gameID)
-	for _, player := range players {
-		sendResponse(player.Connection, response)
-	}
+	sendMessageToAllPlayers(gameID, response)
 }

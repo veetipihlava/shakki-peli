@@ -21,6 +21,8 @@ func main() {
 	e.Use(middleware.UseUser) // TODO should? be replaced with some authentication stuff
 
 	e.POST("/game", handlers.HandleCreateGame)
+	e.POST("/game/:game-id/join", handlers.HandleJoinGame)
+
 	e.GET("/game/:game-id", handlers.UpgradeJoinGame)
 
 	e.Logger.Fatal(e.Start(":8080"))

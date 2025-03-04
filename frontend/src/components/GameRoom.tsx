@@ -2,45 +2,65 @@ import React, { useState, useEffect, FormEvent } from 'react';
 import { useParams } from 'react-router-dom';
 
 const GameRoom: React.FC = () => {
-  const { gameId } = useParams<{ gameId: string }>();
+  const { gameID: gameID } = useParams<{ gameID: string }>();
+  const [playerID, setPlayerID] = useState(null);
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [messages, setMessages] = useState<string[]>([]);
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    const ws = new WebSocket(`ws://localhost:8080/game/${gameId}`);
+    const joinGame = async () => {
+      const response = await fetch(`/game/${gameID}/join`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
 
-    ws.onopen = () => {
-      console.log("connected");
+      if (!response.ok) {
+        throw new Error("Failed to join game");
+      }
+
+      const data = await response.json();
+      setPlayerID(data.player_id);
+
+      const ws = new WebSocket(`ws://localhost:8080/game/${gameID}`);
       setSocket(ws);
 
-      /* const joinMessage = {
-        type: 'join',
+      ws.onopen = () => {
+        console.log("connected");
+        setSocket(ws);
+  
+        const joinMessage = {
+          type: 'join',
+          game: gameID,
+          player_id: playerID,
+          Content: "veeti",
+        };
+        ws.send(JSON.stringify(joinMessage));
       };
-      ws.send(JSON.stringify(joinMessage)); */
+  
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        setMessages((prevMessages) => [...prevMessages, data.message || JSON.stringify(data)]);
+      };
+  
+      ws.onerror = (error) => {
+        console.error("ws error:", error);
+      };
+  
+      ws.onclose = () => {
+        console.log("disconnected");
+        setSocket(null);
+      };
+  
+      return () => {
+        if (ws.readyState === 1) {
+          ws.close();
+        }
+      };
     };
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log(data);
-      setMessages((prevMessages) => [...prevMessages, data.message || JSON.stringify(data)]);
-    };
-
-    ws.onerror = (error) => {
-      console.error("ws error:", error);
-    };
-
-    ws.onclose = () => {
-      console.log("disconnected");
-      setSocket(null);
-    };
-
-    return () => {
-      if (ws.readyState === 1) {
-        ws.close();
-      }
-    };
-  });
+    joinGame();
+  }, [gameID]);
 
   // Function to send a message
   const sendMessage = (e: FormEvent) => {

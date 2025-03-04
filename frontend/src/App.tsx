@@ -11,7 +11,7 @@ const App: React.FC = () => {
         <h1>Multiplayer Game</h1>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/game/:gameId" element={<GameRoom />} />
+          <Route path="/game/:gameID" element={<GameRoom />} />
         </Routes>
       </div>
     </Router>
