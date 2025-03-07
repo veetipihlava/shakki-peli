@@ -1,0 +1,44 @@
+/* Chessboard container */
+.chessboard {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  width: 400px;
+  /* Adjust this size as needed */
+  height: 400px;
+  /* Ensure the board is square */
+  border: 2px solid #333;
+  /* Border around the board */
+  margin: 20px auto;
+  /* Center the board on the page */
+}
+
+
+.white {
+  float: left;
+  width: 64px;
+  height: 64px;
+  background-color: #fff;
+  color: #666;
+  font-size: 24px;
+  text-align: center;
+  vertical-align: middle;
+
+}
+
+.black {
+  float: left;
+  width: 64px;
+  height: 64px;
+  background-color: #666;
+  font-size: 24px;
+  text-align: center;
+  color: #fff;
+  vertical-align: middle;
+}
+
+/* Optional: style for a "selected" square (for highlighting) */
+.square.selected {
+  outline: 3px solid #00f;
+  /* Highlight selected square */
+}
