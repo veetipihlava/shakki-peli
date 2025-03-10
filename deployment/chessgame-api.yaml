@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chessgame-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chessgame-api
+  template:
+    metadata:
+      labels:
+        app: chessgame-api
+    spec:
+      containers:
+        - name: chessgame-api
+          image: chessgame-api:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: REDIS_HOST
+              value: "redis"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chessgame-api
+spec:
+  selector:
+    app: chessgame-api
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
