@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: chessgame-api
+  name: chessgame-server
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: chessgame-api
+      app: chessgame-server
   template:
     metadata:
       labels:
-        app: chessgame-api
+        app: chessgame-server
     spec:
       containers:
-        - name: chessgame-api
-          image: chessgame-api:latest
+        - name: chessgame-server
+          image: chessgame-server:latest
           ports:
             - containerPort: 8080
           env:
@@ -24,10 +24,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: chessgame-api
+  name: chessgame-server
 spec:
   selector:
-    app: chessgame-api
+    app: chessgame-server
   ports:
     - protocol: TCP
       port: 8080
