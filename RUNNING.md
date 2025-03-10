@@ -16,12 +16,14 @@ To test that Redis is working you can run commands inside it:
 
 # Running with Docker compose
 
+With Windows:
+Docker desktop running & inside deployment directory:
+
 Build and run services
 `` docker compose up --build ``
 
-Run services
+Run services (and CTRL + C to stop services)
 `` docker compose up ``
 
 Stop and remove services
-
 `` docker compose down ``
