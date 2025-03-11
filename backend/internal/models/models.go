@@ -37,21 +37,24 @@ type Piece struct {
 	File   int    `json:"file"`
 }
 
-type GameOver struct {
-	Draw        bool `json:"draw"`
-	Checkmate   bool `json:"checkmate"`
-	WinnerColor bool `json:"winner_color"`
-}
-
 type ValidationResult struct {
 	IsValidMove bool     `json:"is_valid_move"`
 	GameOver    GameOver `json:"game_situation"`
 	KingInCheck bool     `json:"king_in_check"`
 }
 
+type GameOver struct {
+	Draw         bool `json:"draw"`
+	Checkmate    bool `json:"checkmate"`
+	KingConsumed bool `json:"king_consumed"`
+	WinnerColor  bool `json:"winner_color"`
+}
+
+// PieceUpdate contains the Piece, a boolean if it needs to be deleted and a TransformPiece string if the Piece needs to be transformed (pawn promotion)
 type PieceUpdate struct {
-	DeletePiece bool  `json:"delete_piece"`
-	Piece       Piece `json:"piece"`
+	DeletePiece    bool   `json:"delete_piece"`
+	Piece          Piece  `json:"piece"`
+	TransformPiece string `json:"transform_piece"`
 }
 
 // All the required data for a database saving entry.
