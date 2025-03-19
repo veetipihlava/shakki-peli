@@ -34,7 +34,11 @@ func UpgradeConnection(c echo.Context) error {
 	for {
 		_, msg, err := ws.ReadMessage()
 		if err != nil {
-			log.Printf("WebSocket read error: %v", err)
+			if websocket.IsCloseError(err, websocket.CloseGoingAway, websocket.CloseNormalClosure) {
+				handleClosing(ws)
+			} else {
+				log.Printf("WebSocket error: %v", err)
+			}
 			return nil
 		}
 

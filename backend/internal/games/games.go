@@ -2,6 +2,7 @@ package games
 
 import (
 	"errors"
+	"slices"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -82,15 +83,19 @@ func (gm *GameConnectionsManager) GetPlayers(gameID int64) ([]Player, error) {
 	return game.Players, nil
 }
 
-/*
-func (gm *GameConnectionsManager) EndGame(gameID int64) {
+func (gm *GameConnectionsManager) RemovePlayerFromGame(websocket *websocket.Conn) (int64, Player, error) {
 	gm.mutex.Lock()
-	game := gm.Games[gameID]
-	for _, player := range game.Players {
-		if player.Connection != nil {
-			player.Connection.Close()
+	defer gm.mutex.Unlock()
+
+	for gameID, game := range gm.Games {
+		for i, player := range game.Players {
+			if player.Connection == websocket {
+				gm.Games[gameID].Players = slices.Delete(game.Players, i, i+1)
+
+				return gameID, player, nil
+			}
 		}
 	}
-	delete(gm.Games, gameID)
-	gm.mutex.Unlock()
-} */
+
+	return -1, Player{}, errors.New("player not found")
+}

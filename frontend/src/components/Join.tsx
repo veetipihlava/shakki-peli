@@ -1,13 +1,18 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const CreateGameButton = () => {
+const Join = () => {
   const navigate = useNavigate();
   const [gameID, setGameID] = useState<string>("");
 
   const joinGame = (e: FormEvent) => {
     e.preventDefault();
-    navigate(`/game/${gameID}`);
+
+    sessionStorage.setItem('gameID', gameID);
+
+    JoinGame(gameID);
+    
+    navigate(`/game`);
   };
   
   return (
@@ -19,8 +24,26 @@ const CreateGameButton = () => {
           placeholder="Game ID"
         />
         <button type="submit">Join</button>
-      </form>
+    </form>
   );
 };
 
-export default CreateGameButton;
+export const JoinGame = async (gameID: string) => {
+  const response = await fetch(`/game/${gameID}/join`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to join game");
+  }
+
+  const data = await response.json();
+  const playerID = data.player_id;
+
+  sessionStorage.setItem('playerID', playerID);
+};
+
+export default Join;

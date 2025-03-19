@@ -9,8 +9,9 @@ import (
 	"github.com/veetipihlava/shakki-peli/internal/utilities"
 )
 
-type JoinMessage struct {
-	Name string `json:"content"`
+type Message struct {
+	Type    string `json:"type"`
+	Content string `json:"content"`
 }
 
 // handleJoinRequest processes a join request from a player
@@ -26,16 +27,37 @@ func handleJoinRequest(ws *websocket.Conn, request ChessMessage) error {
 		return err
 	}
 
-	message := JoinMessage{
-		Name: player.Name,
-	}
-
 	players, err := games.GameManager.GetPlayers(request.GameID)
 	if err != nil {
 		log.Printf("Could not read players: %v", err)
 	}
 
+	message := Message{
+		Type:    "join",
+		Content: player.Name,
+	}
 	utilities.SendMessageToAllPlayers(players, request.GameID, message)
+
+	return nil
+}
+
+// handleClosing processes a closing request from a player
+func handleClosing(ws *websocket.Conn) error {
+	gameID, player, err := games.GameManager.RemovePlayerFromGame(ws)
+	if err != nil {
+		log.Printf("Could not delete player: %v", err)
+	}
+
+	players, err := games.GameManager.GetPlayers(gameID)
+	if err != nil {
+		log.Printf("Could not read players: %v", err)
+	}
+
+	message := Message{
+		Type:    "closing",
+		Content: player.Name,
+	}
+	utilities.SendMessageToAllPlayers(players, gameID, message)
 
 	return nil
 }

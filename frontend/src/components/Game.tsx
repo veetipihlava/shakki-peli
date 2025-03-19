@@ -1,124 +1,82 @@
-import React, { useState, useEffect, FormEvent } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState, useCallback, useEffect } from 'react';
+import useWebSocket, { ReadyState } from 'react-use-websocket';
 
 const Game: React.FC = () => {
-  const { gameID } = useParams();
-  const [playerID, setPlayerID] = useState<string | null>(null);
-  const [socket, setSocket] = useState<WebSocket | null>(null);
-  const [recievedMessages, setRecievedMessages] = useState<string[]>([]);
-  const [userMessage, setUserMessage] = useState('');
+    const playerID: Number = Number(sessionStorage.getItem("playerID"));
+    const gameID: Number = Number(sessionStorage.getItem("gameID"));
 
-  useEffect(() => {
-    console.log("getting player with game id", gameID);
-    const storedPlayerID = sessionStorage.getItem("player_id");
-    if (!storedPlayerID) {
-      const getPlayer = async () => {
-        try {
-          const response = await fetch(`/game/${gameID}/join`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-          });
+    const socketUrl = 'ws://localhost:8080/ws/game';
+    const [messageHistory, setMessageHistory] = useState<MessageEvent<any>[]>([]);
+    const { sendMessage, lastMessage, readyState } = useWebSocket(socketUrl, {
+        shouldReconnect: () => true,
+        reconnectAttempts: 10,
+        reconnectInterval: 3000,
+    });
+    const [userMessage, setUserMessage] = useState('');
 
-          if (!response.ok) {
-            throw new Error("Failed to join game");
-          }
+    useEffect(() => {
+        if (readyState === ReadyState.OPEN) {
+            const joinMessage = {
+              type: 'join',
+              game_id: Number(gameID),
+              player_id: Number(playerID),
+              Content: "placeholder_name",
+            };
 
-          const data = await response.json();
-          sessionStorage.setItem("player_id", data.player_id);
-          setPlayerID(data.player_id);
-        } catch (error) {
-          console.error(error);
+            const json = JSON.stringify(joinMessage);
+            console.log("Sending: ", json);
+
+            sendMessage(json);
         }
-      };
+    }, [readyState]);
 
-      getPlayer();
-    } else {
-      setPlayerID(storedPlayerID);
-    }
-  }, [gameID]);
-
-  useEffect(() => {
-    if (!playerID) return;
-
-    const joinGame = async () => {
-      const ws = new WebSocket(`ws://localhost:8080/ws/game`);
-      setSocket(ws);
-
-      ws.onopen = () => {
-        console.log("connected");
-        setSocket(ws);
-  
-        const joinMessage = {
-          type: 'join',
-          game_id: Number(gameID),
-          player_id: Number(playerID),
-          Content: "veeti",
-        };
-        ws.send(JSON.stringify(joinMessage));
-      };
-  
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        setRecievedMessages((prevMessages) => [...prevMessages, data.message || JSON.stringify(data)]);
-      };
-  
-      ws.onerror = (error) => {
-        console.error("ws error:", error);
-      };
-  
-      ws.onclose = () => {
-        console.log("disconnected");
-        setSocket(null);
-      };
-  
-      return () => {
-        if (ws.readyState === 1) {
-          ws.close();
+    useEffect(() => {
+        if (lastMessage !== null) {
+            setMessageHistory((prev) => prev.concat(lastMessage));
         }
-      };
-    };
+    }, [lastMessage]);
 
-    console.log("joining game with player id", playerID);
-    joinGame();
-  }, [playerID]);
+    const handleClickSendMessage = useCallback((event: React.FormEvent) => {
+        event.preventDefault();
+        const messageObject = {
+            type: 'move',
+            game_id: gameID,
+            player_id: playerID,
+            content: userMessage
+          };
 
-  const sendMessage = (e: FormEvent) => {
-    e.preventDefault();
+        const json = JSON.stringify(messageObject)
+        console.log("Sending: ", json);
+
+        sendMessage(json);
+
+        setUserMessage('');
+    }, []);
     
-    if (socket && socket.readyState === WebSocket.OPEN && userMessage.trim()) {
-      const messageObject = {
-        type: 'move',
-        game_id: Number(gameID),
-        player_id: Number(playerID),
-        content: userMessage
-      };
-      socket.send(JSON.stringify(messageObject));
-      setUserMessage('');
-    } else {
-      console.error("WebSocket is not open or message is empty.");
-    }
-  };
-
-  return (
-    <div>
-      <div className="messages">
-        {recievedMessages.map((text, index) => (
-          <div key={index} className="message">
-            {text}
-          </div>
-        ))}
-      </div>
-      <form onSubmit={sendMessage} className="message-form">
-        <input
-          type="text"
-          value={userMessage}
-          onChange={(e) => setUserMessage(e.target.value)}
-          placeholder="Type a message..."
-        />
-        <button type="submit">Send</button>
-      </form>
-    </div>
-  );
+    return (
+        <div>
+            <h1>Chess game</h1>
+            <div>Game ID: {String(gameID)}</div>
+            <form onSubmit={handleClickSendMessage}>
+                <input
+                    type="text"
+                    value={userMessage}
+                    onChange={(e) => setUserMessage(e.target.value)}
+                    placeholder="Type a message..."
+                />
+                <button type="submit" disabled={readyState !== ReadyState.OPEN}>
+                    Send
+                </button>
+            </form>
+            {lastMessage ? <div>Last message: {lastMessage.data}</div> : null}
+            <h2>Message history</h2>
+            <ul>
+                {messageHistory.map((message, idx) => (
+                    <li key={idx}>{message ? message.data : null}</li>
+                ))}
+            </ul>
+        </div>
+    );
 };
 
 export default Game;
