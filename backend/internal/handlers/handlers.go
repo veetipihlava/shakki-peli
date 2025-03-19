@@ -26,7 +26,6 @@ func HandleCreateGame(c echo.Context) error {
 	}
 
 	games.GameManager.CreateGame(gameID)
-	log.Printf("Created new game: %d", gameID)
 
 	response := CreateGameResponse{
 		GameID: gameID,
@@ -36,22 +35,17 @@ func HandleCreateGame(c echo.Context) error {
 }
 
 // Validate the game ID from the request
-func validateGameID(c echo.Context) (int64, error) {
-	gameIDString := c.Param("game-id")
-	gameID, err := strconv.ParseInt(gameIDString, 10, 64)
+func validateGameID(id int64) error {
+	_, err := games.GameManager.GetGame(id)
 	if err != nil {
-		return 0, echo.NewHTTPError(http.StatusBadRequest, "Invalid game ID format")
+		return echo.NewHTTPError(http.StatusBadRequest, "No such game found")
 	}
 
-	if !games.GameManager.GameExists(gameID) {
-		return 0, echo.NewHTTPError(http.StatusNotFound, "No such game has been started")
-	}
+	/* if len(game.Players) >= 2 {
+		return echo.NewHTTPError(http.StatusUnauthorized, "The game is already full")
+	} */
 
-	if games.GameManager.GameIsFull(gameID) {
-		return 0, echo.NewHTTPError(http.StatusUnauthorized, "The game is already full")
-	}
-
-	return gameID, nil
+	return nil
 }
 
 type JoinGameResponse struct {
@@ -60,7 +54,13 @@ type JoinGameResponse struct {
 
 // Creates a new player to the game.
 func HandleJoinGame(c echo.Context) error {
-	gameID, err := validateGameID(c)
+	gameIDString := c.Param("game-id")
+	gameID, err := strconv.ParseInt(gameIDString, 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid game ID format")
+	}
+
+	err = validateGameID(gameID)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func HandleJoinGame(c echo.Context) error {
 		return err
 	}
 
-	log.Printf("%d joined game %d", playerID, gameID)
+	log.Println("Player", playerID, "joined game", gameID)
 
 	response := JoinGameResponse{
 		PlayerID: playerID,

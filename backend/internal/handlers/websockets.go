@@ -7,9 +7,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
-	"github.com/veetipihlava/shakki-peli/internal/database"
-	"github.com/veetipihlava/shakki-peli/internal/games"
-	"github.com/veetipihlava/shakki-peli/internal/middleware"
+	"github.com/veetipihlava/shakki-peli/internal/utilities"
 )
 
 var Upgrader = websocket.Upgrader{
@@ -26,13 +24,7 @@ type ChessMessage struct {
 }
 
 // UpgradeJoinGame handles WebSocket connection for game participation
-func UpgradeJoinGame(c echo.Context) error {
-	db := c.Get(middleware.DatabaseContextName).(*database.DatabaseService)
-	gameID, err := validateGameID(c)
-	if err != nil {
-		return err
-	}
-
+func UpgradeConnection(c echo.Context) error {
 	ws, err := Upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
 		return err
@@ -43,7 +35,6 @@ func UpgradeJoinGame(c echo.Context) error {
 		_, msg, err := ws.ReadMessage()
 		if err != nil {
 			log.Printf("WebSocket read error: %v", err)
-			games.GameManager.EndGame(gameID)
 			return nil
 		}
 
@@ -51,15 +42,24 @@ func UpgradeJoinGame(c echo.Context) error {
 		err = json.Unmarshal(msg, &request)
 		if err != nil {
 			log.Printf("invalid message: %v", err)
-			sendErrorMessage(ws, "invalid message")
+			utilities.SendErrorMessage(ws, "invalid message")
 			continue
 		}
 
 		switch request.Type {
 		case "join":
-			handleJoinRequest(gameID, ws, request)
+			err := handleJoinRequest(ws, request)
+			if err != nil {
+				utilities.SendErrorMessage(ws, err.Error())
+				log.Printf("error joining game %d: %v", request.GameID, err)
+			}
 		case "move":
-			handleMoveRequest(db, gameID, request)
+			err := handleMoveRequest(request)
+			if err != nil {
+				log.Printf("failed to handle move: %v", err)
+			}
+		case "leave":
+			// TODO
 		case "resign":
 			// TODO: Implement resignation logic
 		case "draw_offer":
@@ -68,7 +68,7 @@ func UpgradeJoinGame(c echo.Context) error {
 			// TODO: Implement draw response logic
 		default:
 			log.Printf("Unknown request type: %s", request.Type)
-			sendErrorMessage(ws, "Unknown request type")
+			utilities.SendErrorMessage(ws, "Unknown request type")
 		}
 	}
 }

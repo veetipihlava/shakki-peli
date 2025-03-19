@@ -23,7 +23,7 @@ func main() {
 	e.POST("/game", handlers.HandleCreateGame)
 	e.POST("/game/:game-id/join", handlers.HandleJoinGame)
 
-	e.GET("/game/:game-id", handlers.UpgradeJoinGame)
+	e.GET("/ws/game", handlers.UpgradeConnection)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }

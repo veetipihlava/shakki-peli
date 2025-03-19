@@ -1,8 +1,6 @@
 package utilities
 
 import (
-	"errors"
-
 	"github.com/veetipihlava/shakki-peli/internal/chess"
 	"github.com/veetipihlava/shakki-peli/internal/database"
 )
@@ -24,7 +22,7 @@ func CreateNewChessGame(db *database.DatabaseService) (int64, error) {
 }
 
 // Reads chess game from database.
-func readChessGame(db *database.DatabaseService, gameID int64) (*chess.Game, error) {
+func ReadChessGame(db *database.DatabaseService, gameID int64) (*chess.Game, error) {
 	pieces, err := db.ReadPieces(gameID)
 	if err != nil {
 		return nil, err
@@ -41,40 +39,4 @@ func readChessGame(db *database.DatabaseService, gameID int64) (*chess.Game, err
 	}
 
 	return chessGame, nil
-}
-
-// Processes the chess move and updates the database. Returns if the move is valid.
-func ProcessChessMove(db *database.DatabaseService, playerID int64, gameID int64, move string) (chess.ValidationResult, error) {
-	game, err := readChessGame(db, gameID)
-	if err != nil {
-		return chess.ValidationResult{}, err
-	}
-	if game == nil {
-		return chess.ValidationResult{}, errors.New("game is null")
-	}
-
-	player, err := db.ReadPlayer(playerID, gameID)
-	if err != nil {
-		return chess.ValidationResult{}, err
-	}
-	if player == nil {
-		return chess.ValidationResult{}, errors.New("player is null")
-	}
-
-	validationResult, piecesToUpdate := chess.ValidateMove(*game, move, player.Color)
-	for _, pieceUpdate := range piecesToUpdate {
-		if pieceUpdate.DeletePiece {
-			err = db.DeletePiece(pieceUpdate.Piece.ID)
-			if err != nil {
-				return validationResult, err
-			}
-		} else {
-			err = db.UpdatePiece(pieceUpdate.Piece)
-			if err != nil {
-				return validationResult, err
-			}
-		}
-	}
-
-	return validationResult, nil
 }

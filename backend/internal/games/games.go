@@ -1,9 +1,11 @@
 package games
 
 import (
+	"errors"
 	"sync"
 
 	"github.com/gorilla/websocket"
+	"github.com/veetipihlava/shakki-peli/internal/database"
 )
 
 var GameManager = GameConnectionsManager{
@@ -22,21 +24,21 @@ type Game struct {
 }
 
 type GameConnectionsManager struct {
+	DB    *database.DatabaseService
 	Games map[int64]*Game
 	mutex sync.RWMutex
 }
 
-func (gm *GameConnectionsManager) GameExists(gameID int64) bool {
+func (gm *GameConnectionsManager) GetGame(gameID int64) (*Game, error) {
 	gm.mutex.RLock()
 	defer gm.mutex.RUnlock()
-	_, exists := gm.Games[gameID]
-	return exists
-}
 
-func (gm *GameConnectionsManager) GameIsFull(gameID int64) bool {
-	gm.mutex.RLock()
-	defer gm.mutex.RUnlock()
-	return len(gm.Games[gameID].Players) >= 2
+	game, exists := gm.Games[gameID]
+	if !exists {
+		return nil, errors.New("game does not exist")
+	}
+
+	return game, nil
 }
 
 func (gm *GameConnectionsManager) CreateGame(gameID int64) {
@@ -48,24 +50,47 @@ func (gm *GameConnectionsManager) CreateGame(gameID int64) {
 	gm.mutex.Unlock()
 }
 
-func (gm *GameConnectionsManager) AddPlayerToGame(gameID int64, player Player) {
+func (gm *GameConnectionsManager) TryAddPlayerToGame(gameID int64, player Player) error {
 	gm.mutex.Lock()
-	gm.Games[gameID].Players = append(gm.Games[gameID].Players, player)
-	gm.mutex.Unlock()
+	defer gm.mutex.Unlock()
+
+	game, exists := gm.Games[gameID]
+	if !exists {
+		return errors.New("game does not exist")
+	}
+
+	for _, gamePlayer := range game.Players {
+		if gamePlayer.ID == player.ID {
+			return errors.New("player already joined")
+		}
+	}
+
+	game.Players = append(game.Players, player)
+
+	return nil
 }
 
-func (gm *GameConnectionsManager) GetPlayers(gameID int64) []Player {
+func (gm *GameConnectionsManager) GetPlayers(gameID int64) ([]Player, error) {
 	gm.mutex.RLock()
 	defer gm.mutex.RUnlock()
-	return gm.Games[gameID].Players
+
+	game, exists := gm.Games[gameID]
+	if !exists {
+		return nil, errors.New("game does not exist")
+	}
+
+	return game.Players, nil
 }
 
+/*
 func (gm *GameConnectionsManager) EndGame(gameID int64) {
 	gm.mutex.Lock()
 	game := gm.Games[gameID]
 	for _, player := range game.Players {
-		player.Connection.Close()
+		if player.Connection != nil {
+			player.Connection.Close()
+		}
 	}
 	delete(gm.Games, gameID)
 	gm.mutex.Unlock()
-}
+} */

@@ -1,81 +1,88 @@
 package handlers
 
 import (
-	"encoding/json"
 	"log"
 
 	"github.com/gorilla/websocket"
 	"github.com/veetipihlava/shakki-peli/internal/chess"
-	"github.com/veetipihlava/shakki-peli/internal/database"
 	"github.com/veetipihlava/shakki-peli/internal/games"
 	"github.com/veetipihlava/shakki-peli/internal/utilities"
 )
 
-// Send a response to the client
-func sendResponse(conn *websocket.Conn, response interface{}) {
-	responseJSON, err := json.Marshal(response)
-	if err != nil {
-		log.Printf("Failed to marshal response: %v", err)
-		return
-	}
-
-	if err := conn.WriteMessage(websocket.TextMessage, responseJSON); err != nil {
-		log.Printf("Failed to send response: %v", err)
-	}
-}
-
-// sendMessageToAllPlayers sends a response to all players in a game
-func sendMessageToAllPlayers(gameID int64, response interface{}) {
-	players := games.GameManager.GetPlayers(gameID)
-	for _, player := range players {
-		sendResponse(player.Connection, response)
-	}
-}
-
-// Send an error message to the client
-func sendErrorMessage(conn *websocket.Conn, message string) {
-	errorResponse := map[string]string{"error": message}
-	sendResponse(conn, errorResponse)
-}
-
-type JoinResponse struct {
+type JoinMessage struct {
 	Name string `json:"content"`
 }
 
 // handleJoinRequest processes a join request from a player
-func handleJoinRequest(gameID int64, ws *websocket.Conn, request ChessMessage) {
+func handleJoinRequest(ws *websocket.Conn, request ChessMessage) error {
 	player := games.Player{
 		Name:       request.Content,
 		ID:         request.PlayerID,
 		Connection: ws,
 	}
 
-	games.GameManager.AddPlayerToGame(gameID, player)
+	err := games.GameManager.TryAddPlayerToGame(request.GameID, player)
+	if err != nil {
+		return err
+	}
 
-	response := JoinResponse{
+	message := JoinMessage{
 		Name: player.Name,
 	}
 
-	sendMessageToAllPlayers(gameID, response)
+	players, err := games.GameManager.GetPlayers(request.GameID)
+	if err != nil {
+		log.Printf("Could not read players: %v", err)
+	}
+
+	utilities.SendMessageToAllPlayers(players, request.GameID, message)
+
+	return nil
 }
 
-type ValidationResponse struct {
+type ValidationMessage struct {
 	Move             string                 `json:"move"`
 	ValidationResult chess.ValidationResult `json:"validation_result"`
 }
 
 // handleMoveRequest processes a move request from a player
-func handleMoveRequest(db *database.DatabaseService, gameID int64, request ChessMessage) {
-	validationResult, err := utilities.ProcessChessMove(db, request.PlayerID, gameID, request.Content)
+func handleMoveRequest(request ChessMessage) error {
+	/* game, err := utilities.ReadChessGame(db, request.GameID)
 	if err != nil {
-		log.Printf("Error: %v", err)
-		return
+		return err
 	}
+	if game == nil {
+		return errors.New("game is null")
+	} */
 
-	response := ValidationResponse{
+	/* color := true // TODO
+
+	validationResult, piecesToUpdate := chess.ValidateMove(*game, request.Content, color)
+	for _, pieceUpdate := range piecesToUpdate {
+		if pieceUpdate.DeletePiece {
+			err = db.DeletePiece(pieceUpdate.Piece.ID)
+			if err != nil {
+				return errors.New("failed to delete chess piece")
+			}
+		} else {
+			err = db.UpdatePiece(pieceUpdate.Piece)
+			if err != nil {
+				return errors.New("failed to delete chess piece")
+			}
+		}
+	} */
+
+	message := ValidationMessage{
 		Move:             request.Content,
-		ValidationResult: validationResult,
+		ValidationResult: chess.ValidationResult{},
 	}
 
-	sendMessageToAllPlayers(gameID, response)
+	players, err := games.GameManager.GetPlayers(request.GameID)
+	if err != nil {
+		log.Printf("Could not read players: %v", err)
+	}
+
+	utilities.SendMessageToAllPlayers(players, request.GameID, message)
+
+	return nil
 }
