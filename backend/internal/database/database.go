@@ -12,6 +12,7 @@ type Database interface {
 
 	CreateGame() (int64, error)
 	ReadGame(gameID int64) (*models.Game, error)
+	EndGame(gameID int64) error
 
 	CreateMove(gameID int64, notation string) error
 	ReadMoves(gameID int64) ([]models.Move, error)
@@ -55,6 +56,11 @@ func (db *DatabaseService) CreateGame() (int64, error) {
 // Reads a game.
 func (db *DatabaseService) ReadGame(gameID int64) (*models.Game, error) {
 	return db.Database.ReadGame(gameID)
+}
+
+// Changes the status of a game.
+func (db *DatabaseService) EndGame(gameID int64) error {
+	return db.Database.EndGame(gameID)
 }
 
 // Creates a new move.
