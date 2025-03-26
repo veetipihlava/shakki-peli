@@ -39,3 +39,24 @@ func (db *Database) ReadGame(gameID int64) (*models.Game, error) {
 
 	return &game, nil
 }
+
+func (db *Database) EndGame(gameID int64) error {
+	query := `UPDATE games
+              SET is_over = 1
+              WHERE id = ?;`
+	result, err := db.Connection.Exec(query, gameID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
+}
