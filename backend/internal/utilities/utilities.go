@@ -12,16 +12,6 @@ func CreateNewChessGame(db *database.DatabaseService, whiteUserID int64, blackUs
 		return 0, err
 	}
 
-	err = db.CreatePlayer(gameID, whiteUserID, chess.White)
-	if err != nil {
-		return 0, err
-	}
-
-	err = db.CreatePlayer(gameID, blackUserID, chess.Black)
-	if err != nil {
-		return 0, err
-	}
-
 	initialPieces := chess.GetInitialChessGamePieces(gameID)
 	err = db.CreatePieces(initialPieces)
 	if err != nil {
@@ -33,7 +23,7 @@ func CreateNewChessGame(db *database.DatabaseService, whiteUserID int64, blackUs
 
 /*
 // Reads chess game from database.
-func readChessGame(db *database.DatabaseService, gameID int64) (*chess.Game, error) {
+func ReadChessGame(db *database.DatabaseService, gameID int64) (*chess.Game, error) {
 	pieces, err := db.ReadPieces(gameID)
 	if err != nil {
 		return nil, err
@@ -51,7 +41,6 @@ func readChessGame(db *database.DatabaseService, gameID int64) (*chess.Game, err
 
 	return chessGame, nil
 }
-
 
 // Processes the chess move and updates the database. Returns if the move is valid.
 func ProcessChessMove(db *database.DatabaseService, userID int64, gameID int64, move string) (models.ValidationResult, error) {

@@ -7,7 +7,7 @@ type Database interface {
 	CreateUser(name string) (int64, error)
 	ReadUser(userID int64) (*models.User, error)
 
-	CreatePlayer(userID int64, gameID int64, color bool) error
+	CreatePlayer(userID int64, gameID int64, color bool) (int64, error)
 	ReadPlayer(userID int64, gameID int64) (*models.Player, error)
 
 	CreateGame() (int64, error)
@@ -39,7 +39,7 @@ func (db *DatabaseService) ReadUser(userID int64) (*models.User, error) {
 }
 
 // Creates a new player.
-func (db *DatabaseService) CreatePlayer(userID int64, gameID int64, color bool) error {
+func (db *DatabaseService) CreatePlayer(userID int64, gameID int64, color bool) (int64, error) {
 	return db.Database.CreatePlayer(gameID, userID, color)
 }
 

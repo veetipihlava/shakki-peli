@@ -1,19 +1,29 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
+	"log"
+
+	"github.com/labstack/echo/v4"
+	"github.com/veetipihlava/shakki-peli/internal/database"
+	"github.com/veetipihlava/shakki-peli/internal/handlers"
+	"github.com/veetipihlava/shakki-peli/internal/middleware"
 )
 
 func main() {
-	fmt.Println("Starting Chess Game API on port 8080...")
-
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Chess Game API is running")
-	})
-
-	err := http.ListenAndServe(":8080", nil)
+	db, connection, err := database.CreateTestLibSQLConnection()
 	if err != nil {
-		panic(err)
+		log.Fatal(err.Error())
 	}
+	defer connection.Close()
+
+	e := echo.New()
+	e.Use(middleware.WithContext(middleware.DatabaseContextName, db))
+	e.Use(middleware.UseUser) // TODO should? be replaced with some authentication stuff
+
+	e.POST("/game", handlers.HandleCreateGame)
+	e.POST("/game/:game-id/join", handlers.HandleJoinGame)
+
+	e.GET("/ws/game", handlers.UpgradeConnection)
+
+	e.Logger.Fatal(e.Start(":8080"))
 }

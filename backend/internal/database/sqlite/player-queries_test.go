@@ -19,7 +19,7 @@ func TestCreatePlayer(t *testing.T) {
 	userID, err := db.CreateUser(testName)
 	require.NoError(t, err)
 
-	err = db.CreatePlayer(gameID, userID, chess.White)
+	_, err = db.CreatePlayer(gameID, userID, chess.White)
 	require.NoError(t, err)
 }
 
@@ -34,7 +34,7 @@ func TestReadPlayer(t *testing.T) {
 	userID, err := db.CreateUser(testName)
 	require.NoError(t, err)
 
-	err = db.CreatePlayer(gameID, userID, chess.White)
+	_, err = db.CreatePlayer(gameID, userID, chess.White)
 	require.NoError(t, err)
 
 	player, err := db.ReadPlayer(gameID, userID)
