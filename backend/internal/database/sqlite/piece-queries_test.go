@@ -13,13 +13,14 @@ func TestCreatePieces(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Connection.Close()
 
-	gameID, err := db.CreateGame()
+	game, err := db.CreateGame()
 	require.NoError(t, err)
 
-	pieces := chess.GetInitialChessGamePieces(gameID)
+	initialPieces := chess.GetInitialChessGamePieces(game.ID)
 
-	err = db.CreatePieces(pieces)
+	createdPieces, err := db.CreatePieces(game.ID, initialPieces)
 	require.NoError(t, err)
+	require.Len(t, createdPieces, len(initialPieces))
 }
 
 func TestReadPieces(t *testing.T) {
@@ -27,15 +28,14 @@ func TestReadPieces(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Connection.Close()
 
-	gameID, err := db.CreateGame()
+	game, err := db.CreateGame()
 	require.NoError(t, err)
 
-	initialPieces := chess.GetInitialChessGamePieces(gameID)
-
-	err = db.CreatePieces(initialPieces)
+	initialPieces := chess.GetInitialChessGamePieces(game.ID)
+	_, err = db.CreatePieces(game.ID, initialPieces)
 	require.NoError(t, err)
 
-	databasePieces, err := db.ReadPieces(gameID)
+	databasePieces, err := db.ReadPieces(game.ID)
 	require.NoError(t, err)
 	require.NotEmpty(t, databasePieces)
 	require.Equal(t, len(initialPieces), len(databasePieces))
@@ -46,20 +46,20 @@ func TestUpdatePiece(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Connection.Close()
 
-	gameID, err := db.CreateGame()
+	game, err := db.CreateGame()
 	require.NoError(t, err)
 
-	initialPieces := chess.GetInitialChessGamePieces(gameID)
-
-	err = db.CreatePieces(initialPieces)
+	initialPieces := chess.GetInitialChessGamePieces(game.ID)
+	_, err = db.CreatePieces(game.ID, initialPieces)
 	require.NoError(t, err)
 
-	pieces, err := db.ReadPieces(gameID)
+	pieces, err := db.ReadPieces(game.ID)
 	require.NoError(t, err)
+	require.NotEmpty(t, pieces)
 
 	updatedPiece := models.Piece{
 		ID:     pieces[0].ID,
-		GameID: gameID,
+		GameID: game.ID,
 		Color:  true,
 		Name:   "horse",
 		Rank:   3,
@@ -68,7 +68,7 @@ func TestUpdatePiece(t *testing.T) {
 	err = db.UpdatePiece(updatedPiece)
 	require.NoError(t, err)
 
-	updatedPieces, err := db.ReadPieces(gameID)
+	updatedPieces, err := db.ReadPieces(game.ID)
 	require.NoError(t, err)
 	require.Equal(t, updatedPiece.ID, updatedPieces[0].ID)
 	require.Equal(t, updatedPiece.GameID, updatedPieces[0].GameID)
@@ -83,21 +83,21 @@ func TestDeletePiece(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Connection.Close()
 
-	gameID, err := db.CreateGame()
+	game, err := db.CreateGame()
 	require.NoError(t, err)
 
-	initialPieces := chess.GetInitialChessGamePieces(gameID)
-
-	err = db.CreatePieces(initialPieces)
+	initialPieces := chess.GetInitialChessGamePieces(game.ID)
+	_, err = db.CreatePieces(game.ID, initialPieces)
 	require.NoError(t, err)
 
-	pieces, err := db.ReadPieces(gameID)
+	pieces, err := db.ReadPieces(game.ID)
 	require.NoError(t, err)
+	require.NotEmpty(t, pieces)
 
 	err = db.DeletePiece(pieces[0].ID)
 	require.NoError(t, err)
 
-	updatedPieces, err := db.ReadPieces(gameID)
+	updatedPieces, err := db.ReadPieces(game.ID)
 	require.NoError(t, err)
 	require.Equal(t, len(pieces)-1, len(updatedPieces))
 }

@@ -11,9 +11,12 @@ func TestCreateGame(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Connection.Close()
 
-	gameID, err := db.CreateGame()
+	game, err := db.CreateGame()
 	require.NoError(t, err)
-	require.NotZero(t, gameID)
+	require.NotNil(t, game)
+	require.NotZero(t, game.ID)
+	require.False(t, game.IsOver)
+	require.NotZero(t, game.CreatedAt)
 }
 
 func TestReadGame(t *testing.T) {
@@ -21,14 +24,14 @@ func TestReadGame(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Connection.Close()
 
-	gameID, err := db.CreateGame()
-	require.NoError(t, err)
-	require.NotZero(t, gameID)
-
-	game, err := db.ReadGame(gameID)
+	game, err := db.CreateGame()
 	require.NoError(t, err)
 	require.NotNil(t, game)
-	require.Equal(t, gameID, game.ID)
-	require.False(t, game.IsOver)
-	require.NotZero(t, game.CreatedAt)
+
+	readGame, err := db.ReadGame(game.ID)
+	require.NoError(t, err)
+	require.NotNil(t, readGame)
+	require.Equal(t, game.ID, readGame.ID)
+	require.False(t, readGame.IsOver)
+	require.NotZero(t, readGame.CreatedAt)
 }

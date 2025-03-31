@@ -4,20 +4,20 @@ import "github.com/veetipihlava/shakki-peli/internal/models"
 
 // Interface for database interactions.
 type Database interface {
-	CreateUser(name string) (int64, error)
+	CreateUser(name string) (*models.User, error)
 	ReadUser(userID int64) (*models.User, error)
 
-	CreatePlayer(userID int64, gameID int64, color bool) (int64, error)
+	CreatePlayer(userID int64, gameID int64) (*models.Player, error)
 	ReadPlayer(userID int64, gameID int64) (*models.Player, error)
 
-	CreateGame() (int64, error)
+	CreateGame() (*models.Game, error)
 	ReadGame(gameID int64) (*models.Game, error)
 	EndGame(gameID int64) error
 
-	CreateMove(gameID int64, notation string) error
+	CreateMove(gameID int64, notation string) (*models.Move, error)
 	ReadMoves(gameID int64) ([]models.Move, error)
 
-	CreatePieces(pieces []models.Piece) error
+	CreatePieces(gameID int64, pieces []models.Piece) ([]models.Piece, error)
 	ReadPieces(gameID int64) ([]models.Piece, error)
 	UpdatePiece(piece models.Piece) error
 	DeletePiece(pieceID int64) error
@@ -29,7 +29,7 @@ type DatabaseService struct {
 }
 
 // Creates a new user.
-func (db *DatabaseService) CreateUser(name string) (int64, error) {
+func (db *DatabaseService) CreateUser(name string) (*models.User, error) {
 	return db.Database.CreateUser(name)
 }
 
@@ -39,8 +39,8 @@ func (db *DatabaseService) ReadUser(userID int64) (*models.User, error) {
 }
 
 // Creates a new player.
-func (db *DatabaseService) CreatePlayer(userID int64, gameID int64, color bool) (int64, error) {
-	return db.Database.CreatePlayer(gameID, userID, color)
+func (db *DatabaseService) CreatePlayer(userID int64, gameID int64) (*models.Player, error) {
+	return db.Database.CreatePlayer(userID, gameID)
 }
 
 // Reads a player.
@@ -49,7 +49,7 @@ func (db *DatabaseService) ReadPlayer(userID int64, gameID int64) (*models.Playe
 }
 
 // Creates a new game.
-func (db *DatabaseService) CreateGame() (int64, error) {
+func (db *DatabaseService) CreateGame() (*models.Game, error) {
 	return db.Database.CreateGame()
 }
 
@@ -64,7 +64,7 @@ func (db *DatabaseService) EndGame(gameID int64) error {
 }
 
 // Creates a new move.
-func (db *DatabaseService) CreateMove(gameID int64, notation string) error {
+func (db *DatabaseService) CreateMove(gameID int64, notation string) (*models.Move, error) {
 	return db.Database.CreateMove(gameID, notation)
 }
 
@@ -74,8 +74,8 @@ func (db *DatabaseService) ReadMoves(gameID int64) ([]models.Move, error) {
 }
 
 // Creates a new piece.
-func (db *DatabaseService) CreatePieces(pieces []models.Piece) error {
-	return db.Database.CreatePieces(pieces)
+func (db *DatabaseService) CreatePieces(gameID int64, pieces []models.Piece) ([]models.Piece, error) {
+	return db.Database.CreatePieces(gameID, pieces)
 }
 
 // Reads a piece.

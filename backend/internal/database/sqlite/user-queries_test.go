@@ -14,9 +14,11 @@ func TestCreateUser(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Connection.Close()
 
-	userID, err := db.CreateUser(testName)
+	user, err := db.CreateUser(testName)
 	require.NoError(t, err)
-	assert.NotZero(t, userID)
+	assert.NotNil(t, user)
+	assert.Equal(t, testName, user.Name)
+	assert.NotZero(t, user.ID)
 }
 
 func TestReadUser(t *testing.T) {
@@ -24,12 +26,12 @@ func TestReadUser(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Connection.Close()
 
-	userID, err := db.CreateUser(testName)
+	user, err := db.CreateUser(testName)
 	require.NoError(t, err)
 
-	user, err := db.ReadUser(userID)
+	readUser, err := db.ReadUser(user.ID)
 	require.NoError(t, err)
-	assert.NotNil(t, user)
-	assert.Equal(t, userID, user.ID)
-	assert.Equal(t, testName, user.Name)
+	assert.NotNil(t, readUser)
+	assert.Equal(t, user.ID, readUser.ID)
+	assert.Equal(t, user.Name, readUser.Name)
 }

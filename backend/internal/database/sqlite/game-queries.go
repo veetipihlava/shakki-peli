@@ -6,20 +6,19 @@ import (
 	"github.com/veetipihlava/shakki-peli/internal/models"
 )
 
-func (db *Database) CreateGame() (int64, error) {
-	query := `INSERT INTO games (is_over)
-              VALUES (0);`
+func (db *Database) CreateGame() (*models.Game, error) {
+	query := `INSERT INTO games (is_over) VALUES (0);`
 	result, err := db.Connection.Exec(query)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	gameID, err := result.LastInsertId()
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	return gameID, nil
+	return db.ReadGame(gameID)
 }
 
 func (db *Database) ReadGame(gameID int64) (*models.Game, error) {

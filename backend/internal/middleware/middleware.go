@@ -7,6 +7,7 @@ import (
 
 var UserIDContextName = "user-id"
 var DatabaseContextName = "database-service"
+var RedisContextName = "redis"
 
 // Middleware to pass a variable to context.
 func WithContext(variableName string, variable interface{}) echo.MiddlewareFunc {
@@ -23,12 +24,12 @@ func UseUser(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// a tmp implementation
 		db := c.Get(DatabaseContextName).(*database.DatabaseService)
-		userID, err := db.CreateUser("shared-user")
+		user, err := db.CreateUser("shared-user")
 		if err != nil {
 			return err
 		}
 
-		c.Set(UserIDContextName, userID)
+		c.Set(UserIDContextName, user)
 		return next(c)
 	}
 }

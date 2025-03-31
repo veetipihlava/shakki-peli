@@ -6,20 +6,19 @@ import (
 	"github.com/veetipihlava/shakki-peli/internal/models"
 )
 
-func (db *Database) CreateUser(name string) (int64, error) {
-	query := `INSERT INTO users (name)
-			  VALUES (?);`
+func (db *Database) CreateUser(name string) (*models.User, error) {
+	query := `INSERT INTO users (name) VALUES (?);`
 	result, err := db.Connection.Exec(query, name)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	id, err := result.LastInsertId()
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	return id, nil
+	return db.ReadUser(id)
 }
 
 func (db *Database) ReadUser(userID int64) (*models.User, error) {

@@ -3,6 +3,7 @@ package redis
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/redis/go-redis/v9"
@@ -10,7 +11,7 @@ import (
 )
 
 // Saves a game to games
-func (r *RedisClient) SaveGame(game *models.Game) error {
+func (r *Redis) SaveGame(game *models.Game) error {
 	key := "games"
 	field := strconv.FormatInt(game.ID, 10)
 	value, err := json.Marshal(game)
@@ -27,7 +28,7 @@ func (r *RedisClient) SaveGame(game *models.Game) error {
 }
 
 // Reads a game from games and returns it
-func (r *RedisClient) ReadGame(gameID int64) (*models.Game, error) {
+func (r *Redis) ReadGame(gameID int64) (*models.Game, error) {
 	key := "games"
 	field := strconv.FormatInt(gameID, 10)
 
@@ -47,11 +48,27 @@ func (r *RedisClient) ReadGame(gameID int64) (*models.Game, error) {
 	return &game, nil
 }
 
+// RemoveGame implements SessionStore
+func (r *Redis) RemoveGame(gameID int64) error {
+	key := "games"
+	field := strconv.FormatInt(gameID, 10)
+
+	// Remove from the "games" hash
+	if err := r.Client.HDel(r.Ctx, key, field).Err(); err != nil {
+		return fmt.Errorf("failed to remove game with ID %d: %v", gameID, err)
+	}
+
+	//TODO remove players and pieces also
+
+	return nil
+}
+
 // Saves a player to games:game_id:players
-func (r *RedisClient) SavePlayer(player *models.Player) error {
+func (r *Redis) SavePlayer(player *models.Player) error {
 	key := fmt.Sprintf("games:%d:players", player.GameID)
 	field := strconv.FormatInt(player.UserID, 10)
 	value, err := json.Marshal(player)
+
 	if err != nil {
 		return fmt.Errorf("failed to marshal player: %v", err)
 	}
@@ -65,14 +82,17 @@ func (r *RedisClient) SavePlayer(player *models.Player) error {
 }
 
 // Reads a single player from games:game_id:players and returns it
-func (r *RedisClient) ReadPlayer(playerID int64, gameID int64) (*models.Player, error) {
+func (r *Redis) ReadPlayer(playerID int64, gameID int64) (*models.Player, error) {
 	key := fmt.Sprintf("games:%d:players", gameID)
 	field := strconv.FormatInt(playerID, 10)
 
 	playerData, err := r.Client.HGet(r.Ctx, key, field).Result()
+
 	if err == redis.Nil {
+		log.Println("[REDIS]: Redis.Nil err")
 		return nil, fmt.Errorf("player with ID %d in game %d not found", playerID, gameID)
 	} else if err != nil {
+		log.Println("[REDIS]: Other error")
 		return nil, fmt.Errorf("failed to read player: %v", err)
 	}
 
@@ -85,8 +105,18 @@ func (r *RedisClient) ReadPlayer(playerID int64, gameID int64) (*models.Player, 
 	return &player, nil
 }
 
+func (r *Redis) RemovePlayer(playerID int64, gameID int64) error {
+	key := fmt.Sprintf("games:%d:players", gameID)
+	field := strconv.FormatInt(playerID, 10)
+
+	if err := r.Client.HDel(r.Ctx, key, field).Err(); err != nil {
+		return fmt.Errorf("failed to remove player with ID %d from game %d: %v", playerID, gameID, err)
+	}
+	return nil
+}
+
 // Adds multiple pieces to games:game_id:pieces
-func (r *RedisClient) SavePieces(pieces []models.Piece) error {
+func (r *Redis) SavePieces(pieces []models.Piece) error {
 	if len(pieces) == 0 {
 		return nil
 	}
@@ -110,7 +140,7 @@ func (r *RedisClient) SavePieces(pieces []models.Piece) error {
 }
 
 // Reads and returns a list of pieces from games:game_id:pieces
-func (r *RedisClient) ReadPieces(gameID int64) ([]models.Piece, error) {
+func (r *Redis) ReadPieces(gameID int64) ([]models.Piece, error) {
 	key := fmt.Sprintf("games:%d:pieces", gameID)
 
 	piecesData, err := r.Client.HGetAll(r.Ctx, key).Result()
@@ -132,25 +162,24 @@ func (r *RedisClient) ReadPieces(gameID int64) ([]models.Piece, error) {
 }
 
 // Overwrites the provided piece in games:game_id:pieces
-func (r *RedisClient) UpdatePiece(piece *models.Piece) error {
+func (r *Redis) UpdatePiece(piece *models.Piece) (*models.Piece, error) {
 	key := fmt.Sprintf("games:%d:pieces", piece.GameID)
 	field := strconv.FormatInt(piece.ID, 10)
 
 	value, err := json.Marshal(piece)
 	if err != nil {
-		return fmt.Errorf("failed to marshal piece: %v", err)
+		return nil, fmt.Errorf("failed to marshal piece: %v", err)
 	}
 
-	err = r.Client.HSet(r.Ctx, key, field, value).Err()
-	if err != nil {
-		return fmt.Errorf("failed to update piece: %v", err)
+	if err := r.Client.HSet(r.Ctx, key, field, value).Err(); err != nil {
+		return nil, fmt.Errorf("failed to update piece: %v", err)
 	}
 
-	return nil
+	return piece, nil
 }
 
 // Deletes a piece from games:game_id:pieces
-func (r *RedisClient) DeletePiece(piece *models.Piece) error {
+func (r *Redis) RemovePiece(piece *models.Piece) error {
 	key := fmt.Sprintf("games:%d:pieces", piece.GameID)
 	field := strconv.FormatInt(piece.ID, 10)
 

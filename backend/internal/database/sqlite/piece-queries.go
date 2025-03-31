@@ -6,27 +6,26 @@ import (
 	"github.com/veetipihlava/shakki-peli/internal/models"
 )
 
-func (db *Database) CreatePieces(pieces []models.Piece) error {
+func (db *Database) CreatePieces(gameID int64, pieces []models.Piece) ([]models.Piece, error) {
 	if len(pieces) == 0 {
-		return errors.New("no pieces in input")
+		return nil, errors.New("no pieces in input")
 	}
-	query := `INSERT INTO pieces (game_id, color, name, rank, file)
-			  VALUES `
 
+	query := `INSERT INTO pieces (game_id, color, name, rank, file) VALUES `
 	vals := []interface{}{}
 
 	for _, piece := range pieces {
 		query += "(?, ?, ?, ?, ?),"
 		vals = append(vals, piece.GameID, piece.Color, piece.Name, piece.Rank, piece.File)
 	}
-	query = query[0 : len(query)-1]
+	query = query[:len(query)-1]
 
 	_, err := db.Connection.Exec(query, vals...)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return db.ReadPieces(gameID)
 }
 
 func (db *Database) ReadPieces(gameID int64) ([]models.Piece, error) {

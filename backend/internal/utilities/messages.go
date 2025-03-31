@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/gorilla/websocket"
-	"github.com/veetipihlava/shakki-peli/internal/games"
+	"github.com/veetipihlava/shakki-peli/internal/connections"
 )
 
 // Send a response to the client
@@ -29,8 +29,8 @@ func SendErrorMessage(conn *websocket.Conn, message string) {
 }
 
 // sendMessageToAllPlayers sends a response to all players in a game
-func SendMessageToAllPlayers(players []games.Player, gameID int64, response interface{}) {
+func SendMessageToAllPlayers(players []connections.PlayerConn, gameID int64, response interface{}) {
 	for _, player := range players {
-		SendResponse(player.Connection, response)
+		SendResponse(player.Conn, response)
 	}
 }

@@ -25,6 +25,8 @@ func ValidateMove(pieces []models.Piece, move string, color bool) (models.Valida
 		return validationResult, nil
 	}
 
+	validationResult.Move = move
+
 	var updates []models.PieceUpdate
 
 	// 3. The move is valid, so check if we consumed an enemy Piece.

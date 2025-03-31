@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"errors"
 	"log"
 
 	"github.com/gorilla/websocket"
-	"github.com/veetipihlava/shakki-peli/internal/chess"
-	"github.com/veetipihlava/shakki-peli/internal/games"
+	"github.com/veetipihlava/shakki-peli/internal/connections"
+	"github.com/veetipihlava/shakki-peli/internal/models"
+	"github.com/veetipihlava/shakki-peli/internal/sessionstore"
 	"github.com/veetipihlava/shakki-peli/internal/utilities"
 )
 
@@ -14,28 +16,34 @@ type Message struct {
 	Content string `json:"content"`
 }
 
-// handleJoinRequest processes a join request from a player
-func handleJoinRequest(ws *websocket.Conn, request ChessMessage) error {
-	player := games.Player{
-		Name:       request.Content,
-		ID:         request.PlayerID,
-		Connection: ws,
+// User joins the WebSocket. Game, pieces and player are already in SessionStore.
+func joinWebSocket(redis sessionstore.SessionStore, ws *websocket.Conn, request ChessMessage) error {
+	_, err := redis.ReadGame(request.GameID)
+	if err != nil {
+		return errors.New("game not in sessionstore")
+	}
+	player, err := redis.ReadPlayer(request.PlayerID, request.GameID)
+	if err != nil {
+		return errors.New("player not in sessionstore")
 	}
 
-	err := games.GameManager.TryAddPlayerToGame(request.GameID, player)
+	playerConn := connections.PlayerConn{Player: player, Conn: ws}
+
+	err = connections.ConnManager.TryAddPlayerToGame(request.GameID, playerConn)
 	if err != nil {
+		log.Printf("Could not add player: %v", err)
 		return err
 	}
 
-	players, err := games.GameManager.GetPlayers(request.GameID)
+	players, err := connections.ConnManager.GetGameConnections(request.GameID)
+
 	if err != nil {
 		log.Printf("Could not read players: %v", err)
+		return err
 	}
 
-	message := Message{
-		Type:    "join",
-		Content: player.Name,
-	}
+	message := Message{Type: "join", Content: request.Content}
+
 	utilities.SendMessageToAllPlayers(players, request.GameID, message)
 
 	return nil
@@ -43,68 +51,52 @@ func handleJoinRequest(ws *websocket.Conn, request ChessMessage) error {
 
 // handleClosing processes a closing request from a player
 func handleClosing(ws *websocket.Conn) error {
-	gameID, player, err := games.GameManager.RemovePlayerFromGame(ws)
+	gameID, playerConn, err := connections.ConnManager.GetPlayerFromConn(ws)
+
+	err = connections.ConnManager.RemovePlayer(gameID, playerConn)
 	if err != nil {
 		log.Printf("Could not delete player: %v", err)
 	}
 
-	players, err := games.GameManager.GetPlayers(gameID)
+	players, err := connections.ConnManager.GetGameConnections(gameID)
 	if err != nil {
 		log.Printf("Could not read players: %v", err)
 	}
 
 	message := Message{
 		Type:    "closing",
-		Content: player.Name,
+		Content: "en tiedä vittu",
 	}
 	utilities.SendMessageToAllPlayers(players, gameID, message)
 
 	return nil
 }
 
-type ValidationMessage struct {
-	Move             string                 `json:"move"`
-	ValidationResult chess.ValidationResult `json:"validation_result"`
-}
-
 // handleMoveRequest processes a move request from a player
 func handleMoveRequest(request ChessMessage) error {
-	/* game, err := utilities.ReadChessGame(db, request.GameID)
-	if err != nil {
-		return err
-	}
-	if game == nil {
-		return errors.New("game is null")
-	} */
 
-	/* color := true // TODO
-
-	validationResult, piecesToUpdate := chess.ValidateMove(*game, request.Content, color)
-	for _, pieceUpdate := range piecesToUpdate {
-		if pieceUpdate.DeletePiece {
-			err = db.DeletePiece(pieceUpdate.Piece.ID)
-			if err != nil {
-				return errors.New("failed to delete chess piece")
-			}
-		} else {
-			err = db.UpdatePiece(pieceUpdate.Piece)
-			if err != nil {
-				return errors.New("failed to delete chess piece")
-			}
-		}
-	} */
-
-	message := ValidationMessage{
-		Move:             request.Content,
-		ValidationResult: chess.ValidationResult{},
+	valid := models.ValidationResult{
+		Move:        request.Content,
+		IsValidMove: true,
+		KingInCheck: false,
+		GameOver: models.GameOver{
+			Draw:         false,
+			Checkmate:    false,
+			KingConsumed: false,
+			WinnerColor:  true,
+		},
 	}
 
-	players, err := games.GameManager.GetPlayers(request.GameID)
+	players, err := connections.ConnManager.GetGameConnections(request.GameID)
 	if err != nil {
 		log.Printf("Could not read players: %v", err)
 	}
 
-	utilities.SendMessageToAllPlayers(players, request.GameID, message)
+	message := Message{
+		Type:    "move",
+		Content: valid.Move,
+	}
 
+	utilities.SendMessageToAllPlayers(players, request.GameID, message)
 	return nil
 }

@@ -7,6 +7,8 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
+	"github.com/veetipihlava/shakki-peli/internal/middleware"
+	"github.com/veetipihlava/shakki-peli/internal/sessionstore"
 	"github.com/veetipihlava/shakki-peli/internal/utilities"
 )
 
@@ -25,6 +27,8 @@ type ChessMessage struct {
 
 // UpgradeJoinGame handles WebSocket connection for game participation
 func UpgradeConnection(c echo.Context) error {
+	redis := c.Get(middleware.RedisContextName).(sessionstore.SessionStore)
+
 	ws, err := Upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
 		return err
@@ -52,7 +56,7 @@ func UpgradeConnection(c echo.Context) error {
 
 		switch request.Type {
 		case "join":
-			err := handleJoinRequest(ws, request)
+			err := joinWebSocket(redis, ws, request)
 			if err != nil {
 				utilities.SendErrorMessage(ws, err.Error())
 				log.Printf("error joining game %d: %v", request.GameID, err)

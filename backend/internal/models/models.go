@@ -38,6 +38,7 @@ type Piece struct {
 }
 
 type ValidationResult struct {
+	Move        string   `json:"move"`
 	IsValidMove bool     `json:"is_valid_move"`
 	GameOver    GameOver `json:"game_situation"`
 	KingInCheck bool     `json:"king_in_check"`

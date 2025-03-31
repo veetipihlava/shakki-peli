@@ -7,7 +7,7 @@ import (
 	"github.com/veetipihlava/shakki-peli/internal/models"
 )
 
-func (r *RedisClient) PublishEntry(chessEntry models.ChessEntry) error {
+func (r *Redis) PublishEntry(chessEntry models.ChessEntry) error {
 	channel := fmt.Sprintf("game:%d:entries", chessEntry.GameID)
 	messageData, err := json.Marshal(chessEntry)
 	if err != nil {

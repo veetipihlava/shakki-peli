@@ -3,9 +3,7 @@ package sqlite
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/veetipihlava/shakki-peli/internal/chess"
 )
 
 func TestCreatePlayer(t *testing.T) {
@@ -13,14 +11,18 @@ func TestCreatePlayer(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Connection.Close()
 
-	gameID, err := db.CreateGame()
+	game, err := db.CreateGame()
 	require.NoError(t, err)
 
-	userID, err := db.CreateUser(testName)
+	user, err := db.CreateUser("TestPlayer")
 	require.NoError(t, err)
 
-	_, err = db.CreatePlayer(gameID, userID, chess.White)
+	player, err := db.CreatePlayer(user.ID, game.ID)
 	require.NoError(t, err)
+	require.NotNil(t, player)
+	require.Equal(t, user.ID, player.UserID)
+	require.Equal(t, game.ID, player.GameID)
+	require.False(t, player.Color) // first player is white (false)
 }
 
 func TestReadPlayer(t *testing.T) {
@@ -28,19 +30,19 @@ func TestReadPlayer(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Connection.Close()
 
-	gameID, err := db.CreateGame()
+	game, err := db.CreateGame()
 	require.NoError(t, err)
 
-	userID, err := db.CreateUser(testName)
+	user, err := db.CreateUser("TestPlayer")
 	require.NoError(t, err)
 
-	_, err = db.CreatePlayer(gameID, userID, chess.White)
+	player, err := db.CreatePlayer(user.ID, game.ID)
 	require.NoError(t, err)
 
-	player, err := db.ReadPlayer(gameID, userID)
+	readPlayer, err := db.ReadPlayer(user.ID, game.ID)
 	require.NoError(t, err)
-	assert.NotNil(t, player)
-	assert.Equal(t, gameID, player.GameID)
-	assert.Equal(t, userID, player.UserID)
-	assert.Equal(t, chess.White, player.Color)
+	require.NotNil(t, readPlayer)
+	require.Equal(t, player.UserID, readPlayer.UserID)
+	require.Equal(t, player.GameID, readPlayer.GameID)
+	require.Equal(t, player.Color, readPlayer.Color)
 }

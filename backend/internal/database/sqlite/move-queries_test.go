@@ -19,12 +19,16 @@ func TestCreateMove(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Connection.Close()
 
-	gameID, err := db.CreateGame()
+	game, err := db.CreateGame()
 	require.NoError(t, err)
 
-	testMove := getTestMove(gameID, "e4")
-	err = db.CreateMove(testMove.GameID, testMove.Notation)
+	move, err := db.CreateMove(game.ID, "e4")
 	require.NoError(t, err)
+	require.NotNil(t, move)
+	require.Equal(t, "e4", move.Notation)
+	require.Equal(t, game.ID, move.GameID)
+	require.NotZero(t, move.ID)
+	require.NotZero(t, move.CreatedAt)
 }
 
 func TestReadMoves(t *testing.T) {
@@ -32,18 +36,16 @@ func TestReadMoves(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Connection.Close()
 
-	gameID, err := db.CreateGame()
+	game, err := db.CreateGame()
 	require.NoError(t, err)
 
-	testMove := getTestMove(gameID, "e4")
-	err = db.CreateMove(testMove.GameID, testMove.Notation)
+	_, err = db.CreateMove(game.ID, "e4")
 	require.NoError(t, err)
-	err = db.CreateMove(testMove.GameID, testMove.Notation)
+	_, err = db.CreateMove(game.ID, "e5")
 	require.NoError(t, err)
 
-	moves, err := db.ReadMoves(gameID)
+	moves, err := db.ReadMoves(game.ID)
 	require.NoError(t, err)
-	require.NotEmpty(t, moves)
 	require.Len(t, moves, 2)
-	require.Equal(t, testMove.Notation, moves[0].Notation)
+	require.Equal(t, "e4", moves[0].Notation)
 }
