@@ -48,7 +48,7 @@ func HandleCreateGame(c echo.Context) error {
 
 // Verifies that a game with provided id is ongoing.
 func validateGame(gameID int64) error {
-	_, err := connections.ConnManager.VerifyGameOngoing(gameID)
+	err := connections.ConnManager.VerifyGame(gameID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "No such game found")
 	}

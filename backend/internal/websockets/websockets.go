@@ -1,4 +1,4 @@
-package handlers
+package websockets
 
 import (
 	"encoding/json"
@@ -9,7 +9,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/veetipihlava/shakki-peli/internal/middleware"
 	"github.com/veetipihlava/shakki-peli/internal/sessionstore"
-	"github.com/veetipihlava/shakki-peli/internal/utilities"
 )
 
 var Upgrader = websocket.Upgrader{
@@ -39,7 +38,7 @@ func UpgradeConnection(c echo.Context) error {
 		_, msg, err := ws.ReadMessage()
 		if err != nil {
 			if websocket.IsCloseError(err, websocket.CloseGoingAway, websocket.CloseNormalClosure) {
-				handleClosing(ws)
+				HandleLeave(redis, ws)
 			} else {
 				log.Printf("WebSocket error: %v", err)
 			}
@@ -50,24 +49,26 @@ func UpgradeConnection(c echo.Context) error {
 		err = json.Unmarshal(msg, &request)
 		if err != nil {
 			log.Printf("invalid message: %v", err)
-			utilities.SendErrorMessage(ws, "invalid message")
+			SendErrorMessage(ws, "invalid message")
 			continue
 		}
 
 		switch request.Type {
 		case "join":
-			err := joinWebSocket(redis, ws, request)
+			err := HandleJoinGame(redis, ws, request)
 			if err != nil {
-				utilities.SendErrorMessage(ws, err.Error())
 				log.Printf("error joining game %d: %v", request.GameID, err)
 			}
 		case "move":
-			err := handleMoveRequest(request)
+			err := HandleMove(redis, ws, request)
 			if err != nil {
 				log.Printf("failed to handle move: %v", err)
 			}
 		case "leave":
-			// TODO
+			err := HandleLeave(redis, ws)
+			if err != nil {
+				log.Printf("failed to handle closing: %v", err)
+			}
 		case "resign":
 			// TODO: Implement resignation logic
 		case "draw_offer":
@@ -76,7 +77,7 @@ func UpgradeConnection(c echo.Context) error {
 			// TODO: Implement draw response logic
 		default:
 			log.Printf("Unknown request type: %s", request.Type)
-			utilities.SendErrorMessage(ws, "Unknown request type")
+			SendErrorMessage(ws, "Unknown request type")
 		}
 	}
 }

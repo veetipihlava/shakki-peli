@@ -49,9 +49,8 @@ const Game: React.FC = () => {
         console.log("Sending: ", json);
 
         sendMessage(json);
-
         setUserMessage('');
-    }, []);
+    }, [userMessage]);
     
     return (
         <div>

@@ -13,14 +13,12 @@ type Game struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// A struct for matching a User with a Game.
 type Player struct {
 	UserID int64 `json:"user_id"`
 	GameID int64 `json:"game_id"`
 	Color  bool  `json:"color"`
 }
 
-// A move. If viewing an old game, the Move has an ID. Otherwise it doesn't.
 type Move struct {
 	ID        int64     `json:"id"`
 	GameID    int64     `json:"game_id"`

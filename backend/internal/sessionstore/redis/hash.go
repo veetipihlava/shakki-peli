@@ -48,18 +48,44 @@ func (r *Redis) ReadGame(gameID int64) (*models.Game, error) {
 	return &game, nil
 }
 
-// RemoveGame implements SessionStore
+// Removes a game from games, and ensures all data related to this game is removed
 func (r *Redis) RemoveGame(gameID int64) error {
-	key := "games"
-	field := strconv.FormatInt(gameID, 10)
-
-	// Remove from the "games" hash
-	if err := r.Client.HDel(r.Ctx, key, field).Err(); err != nil {
+	// 1. Remove this game from games
+	gameKey := "games"
+	gameField := strconv.FormatInt(gameID, 10)
+	if err := r.Client.HDel(r.Ctx, gameKey, gameField).Err(); err != nil {
 		return fmt.Errorf("failed to remove game with ID %d: %v", gameID, err)
 	}
 
-	//TODO remove players and pieces also
+	// 2. Remove the remaining pieces from games:<game_id>:pieces
+	pieceKey := fmt.Sprintf("games:%d:pieces", gameID)
+	pieceFields, err := r.Client.HKeys(r.Ctx, pieceKey).Result()
+	if err != nil {
+		log.Printf("[SESSION STORE] Could not fetch pieces for game %d: %v", gameID, err)
+	} else {
+		if len(pieceFields) > 0 {
+			if err := r.Client.HDel(r.Ctx, pieceKey, pieceFields...).Err(); err != nil {
+				log.Printf("[SESSION STORE] Failed to remove pieces from game %d: %v", gameID, err)
+			}
+		}
+		r.Client.Del(r.Ctx, pieceKey)
+	}
 
+	// 3. Ensure all players are removed from games:<game_id>:players
+	playerKey := fmt.Sprintf("games:%d:players", gameID)
+	playerFields, err := r.Client.HKeys(r.Ctx, playerKey).Result()
+	if err != nil {
+		log.Printf("[SESSION STORE] Could not fetch players for game %d: %v", gameID, err)
+	} else {
+		if len(playerFields) > 0 {
+			if err := r.Client.HDel(r.Ctx, playerKey, playerFields...).Err(); err != nil {
+				log.Printf("[SESSION STORE] Failed to remove players from game %d: %v", gameID, err)
+			}
+		}
+		r.Client.Del(r.Ctx, playerKey)
+	}
+
+	log.Printf("[SESSION STORE] Game %d fully removed (game, players, pieces)", gameID)
 	return nil
 }
 
@@ -89,10 +115,8 @@ func (r *Redis) ReadPlayer(playerID int64, gameID int64) (*models.Player, error)
 	playerData, err := r.Client.HGet(r.Ctx, key, field).Result()
 
 	if err == redis.Nil {
-		log.Println("[REDIS]: Redis.Nil err")
 		return nil, fmt.Errorf("player with ID %d in game %d not found", playerID, gameID)
 	} else if err != nil {
-		log.Println("[REDIS]: Other error")
 		return nil, fmt.Errorf("failed to read player: %v", err)
 	}
 
