@@ -13,6 +13,7 @@ type Database interface {
 	CreateGame() (*models.Game, error)
 	ReadGame(gameID int64) (*models.Game, error)
 	EndGame(gameID int64) error
+	GetFullGameState(gameID int64) (*models.Game, []models.Player, []models.Piece, []models.Move, error)
 
 	CreateMove(gameID int64, notation string) (*models.Move, error)
 	ReadMoves(gameID int64) ([]models.Move, error)
@@ -61,6 +62,11 @@ func (db *DatabaseService) ReadGame(gameID int64) (*models.Game, error) {
 // Changes the status of a game.
 func (db *DatabaseService) EndGame(gameID int64) error {
 	return db.Database.EndGame(gameID)
+}
+
+// Return everything related to this game
+func (db *DatabaseService) GetFullGameState(gameID int64) (*models.Game, []models.Player, []models.Piece, []models.Move, error) {
+	return db.Database.GetFullGameState(gameID)
 }
 
 // Creates a new move.

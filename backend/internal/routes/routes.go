@@ -12,6 +12,8 @@ func SetupRoutes(e *echo.Echo) {
 	e.POST("/game", handlers.HandleCreateGame)
 	e.POST("/game/:game-id/join", handlers.JoinAsPlayer)
 
+	e.GET("/games/:game-id", handlers.HandleGetFullGame)
+
 	e.GET("/ws/game", websockets.UpgradeConnection)
 
 }

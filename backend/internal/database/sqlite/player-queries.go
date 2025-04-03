@@ -56,3 +56,25 @@ func (db *Database) ReadPlayer(userID int64, gameID int64) (*models.Player, erro
 	log.Println("[DB]: Player in game ", player.GameID)
 	return &player, nil
 }
+
+func (db *Database) GetGamePlayers(gameID int64) ([]models.Player, error) {
+	query := `SELECT * FROM players WHERE game_id = ?;`
+
+	rows, err := db.Connection.Query(query, gameID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var players []models.Player
+	for rows.Next() {
+		var player models.Player
+		err := rows.Scan(&player.UserID, &player.GameID, &player.Color)
+		if err != nil {
+			return nil, err
+		}
+		players = append(players, player)
+	}
+
+	return players, nil
+}

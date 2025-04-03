@@ -59,3 +59,30 @@ func (db *Database) EndGame(gameID int64) error {
 
 	return nil
 }
+
+func (db *Database) GetFullGameState(gameID int64) (*models.Game, []models.Player, []models.Piece, []models.Move, error) {
+	game, err := db.ReadGame(gameID)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	if game == nil {
+		return nil, nil, nil, nil, nil
+	}
+
+	players, err := db.GetGamePlayers(gameID)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	pieces, err := db.ReadPieces(gameID)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	moves, err := db.ReadMoves(gameID)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	return game, players, pieces, moves, nil
+}
