@@ -129,6 +129,29 @@ func (r *Redis) ReadPlayer(playerID int64, gameID int64) (*models.Player, error)
 	return &player, nil
 }
 
+// Reads all players from games:game_id:players and returns them as a slice
+func (r *Redis) ReadPlayers(gameID int64) ([]models.Player, error) {
+	key := fmt.Sprintf("games:%d:players", gameID)
+
+	playersData, err := r.Client.HGetAll(r.Ctx, key).Result()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read players for game %d: %v", gameID, err)
+	}
+
+	var players []models.Player
+	for _, value := range playersData {
+		var player models.Player
+		err := json.Unmarshal([]byte(value), &player)
+		if err != nil {
+			log.Printf("failed to unmarshal player data in game %d: %v", gameID, err)
+			continue
+		}
+		players = append(players, player)
+	}
+
+	return players, nil
+}
+
 func (r *Redis) RemovePlayer(playerID int64, gameID int64) error {
 	key := fmt.Sprintf("games:%d:players", gameID)
 	field := strconv.FormatInt(playerID, 10)

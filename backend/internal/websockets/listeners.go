@@ -29,8 +29,8 @@ type LeaveGameContent struct {
 
 type ValidMoveContent struct {
 	Move         string `json:"move"`
-	KingInCheck  string `json:"king_in_check"`
-	GameOver     bool   `json:"game_over"`
+	UserID       int64  `json:"user_id"`
+	KingInCheck  bool   `json:"king_in_check"`
 	Draw         bool   `json:"draw"`
 	Checkmate    bool   `json:"checkmate"`
 	KingConsumed bool   `json:"king_consumed"`
@@ -71,11 +71,13 @@ func HandleJoinGame(ss sessionstore.SessionStore, ws *websocket.Conn, request Ch
 func HandleMove(ss sessionstore.SessionStore, ws *websocket.Conn, request ChessMessage) error {
 	gameID := request.GameID
 	//userID := request.PlayerID
-	move := request.Content
+	notation := request.Content
 
 	// Verify player and game exist in memory
 	_, player, err := GetGameAndPlayerFromSessionStore(ss, request.GameID, request.PlayerID)
 	if err != nil {
+		msg := NewErrorMessage("move", "Error verifying player")
+		Respond(ws, msg)
 		return err
 	}
 
@@ -85,16 +87,32 @@ func HandleMove(ss sessionstore.SessionStore, ws *websocket.Conn, request ChessM
 		return err
 	}
 
-	// Call the Chess validator
-	validationResult, _ := chess.ValidateMove(pieces, move, player.Color)
-
+	// Chess validator to check if move is valid
+	validationResult, updatePieces := chess.ValidateMove(pieces, notation, player.Color)
 	if !validationResult.IsValidMove {
 		msg := NewErrorMessage("move", "Move not valid")
 		Respond(ws, msg)
 		return nil
 	}
 
-	content := ValidMoveContent{}
+	// Save the valid move to stack
+	validMove := GetAsMove(gameID, validationResult.Move)
+	err = ss.SaveMove(validMove)
+	if err != nil {
+		msg := NewErrorMessage("move", "Error occured saving move")
+		Respond(ws, msg)
+		return nil
+	}
+
+	// Create a ChessEntry from the valid move
+	chessEntry := GetAsChessEntry(gameID, validMove, validationResult.GameOver, updatePieces)
+	err = ss.PublishEntry(chessEntry)
+	if err != nil {
+		return nil
+	}
+
+	// Broadcast the valid move
+	content := GetAsValidMoveContent(player.UserID, validationResult)
 	msg := NewMessage("move", content)
 	Broadcast(gameID, msg)
 	return nil
@@ -105,11 +123,23 @@ func HandleLeave(ss sessionstore.SessionStore, ws *websocket.Conn) error {
 
 	// Fetch the corresponding player and game from the conneciton
 	player, err := connections.ConnManager.GetPlayerByConnection(ws)
+	if err != nil {
+		log.Printf("Could not read player: %v", err)
+	}
 
 	// Remove connection
 	err = connections.ConnManager.RemoveConnection(ws)
 	if err != nil {
 		log.Printf("Could not delete player: %v", err)
+	}
+
+	conns, err := connections.ConnManager.GetConnectionsInGame(player.GameID)
+	if err != nil {
+		log.Printf("Could not check player connections after removing player: %v", err)
+	}
+
+	if len(conns) == 0 {
+		connections.ConnManager.RemoveGame(player.GameID)
 	}
 
 	// Cleanup memory

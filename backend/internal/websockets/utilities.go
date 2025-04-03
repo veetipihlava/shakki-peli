@@ -3,6 +3,7 @@ package websockets
 import (
 	"encoding/json"
 	"log"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/veetipihlava/shakki-peli/internal/connections"
@@ -87,16 +88,50 @@ func RemovePlayerFromSessionStore(ss sessionstore.SessionStore, gameID int64, us
 		log.Printf("[SESSION STORE] Error removing player %v from session store: %v", userID, err)
 	}
 
-	// Check if players are still connected
-	conns, err := connections.ConnManager.GetConnectionsInGame(gameID)
-	if err != nil || len(conns) == 0 {
-		log.Printf("[WS] No players left in game %v. Cleaning up entire game.", gameID)
+	// Check if there are still players
+	players, err := ss.ReadPlayers(gameID)
+	if err != nil {
+		log.Printf("[SESSION STORE] Error reading players from game %d: %v", gameID, err)
+		log.Printf("[SESSION STORE] Proceeding to remove the game still.")
+	}
 
-		// 3. Let Redis handle full cleanup (game, players, pieces)
+	if err != nil || len(players) == 0 {
+		log.Printf("[WS] Removing game %v from session store.", gameID)
 		if err := ss.RemoveGame(gameID); err != nil {
-			log.Printf("[WS] Error removing game %v from session store: %v", gameID, err)
+			log.Printf("[WS] Error removing game %v: %v", gameID, err)
+			return err
 		}
 	}
 
 	return nil
+}
+
+func GetAsValidMoveContent(userID int64, result models.ValidationResult) ValidMoveContent {
+	return ValidMoveContent{
+		Move:         result.Move,
+		UserID:       userID,
+		KingInCheck:  result.KingInCheck,
+		Draw:         result.GameOver.Draw,
+		Checkmate:    result.GameOver.Checkmate,
+		KingConsumed: result.GameOver.KingConsumed,
+		WinnerColor:  result.GameOver.WinnerColor,
+	}
+}
+
+func GetAsMove(gameID int64, notation string) models.Move {
+	return models.Move{
+		ID:        0,
+		GameID:    gameID,
+		Notation:  notation,
+		CreatedAt: time.Now(),
+	}
+}
+
+func GetAsChessEntry(gameID int64, move models.Move, gameOver models.GameOver, affectedPieces []models.PieceUpdate) models.ChessEntry {
+	return models.ChessEntry{
+		GameID:         gameID,
+		Move:           move,
+		GameOver:       gameOver,
+		AffectedPieces: affectedPieces,
+	}
 }
