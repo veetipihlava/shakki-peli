@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	RedisAddr = "localhost:6379"
+	RedisAddr = "redis:6379"
 	RedisDB   = 0
 )
 

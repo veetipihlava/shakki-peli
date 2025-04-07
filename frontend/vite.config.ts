@@ -6,22 +6,20 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
-    strictPort: true
-  },
-  plugins: [react()],
-  /* server: {
+    strictPort: true,
     proxy: {
       '/game': {
-        target: 'http://localhost:8080',
+        target: 'http://chessgame-server:8080',
         changeOrigin: true,
         secure: false,
       },
       '/game/': {
-        target: 'ws://localhost:8080',
+        target: 'ws://chessgame-server:8080',
         ws: true,
         changeOrigin: true,
         secure: false,
       },
     },
-  }, */
-})
+  },
+  plugins: [react()],
+});

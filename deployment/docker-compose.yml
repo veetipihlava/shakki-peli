@@ -5,6 +5,9 @@ services:
     build:
       context: ../backend
       dockerfile: Dockerfile
+    environment:
+      - TURSO_DATABASE_URL=${TURSO_DATABASE_URL}
+      - TURSO_AUTH_TOKEN=${TURSO_AUTH_TOKEN}
     ports:
       - "8080:8080"
     depends_on:
@@ -27,7 +30,7 @@ services:
     image: redis:7-alpine
     command: redis-server /usr/local/etc/redis/redis.conf
     volumes:
-      - ../backend/internal/redis/redis.conf:/usr/local/etc/redis/redis.conf
+      - ../backend/internal/sessionstore/redis/redis.conf:/usr/local/etc/redis/redis.conf
     ports:
       - "6379:6379"
     restart: unless-stopped
