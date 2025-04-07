@@ -47,7 +47,7 @@ const Game: React.FC = () => {
             if (!move) {
                 console.log("Invalid move from server: ", serverMove);
             }
-        } else if (messageData.type === 'error' && messageData.ref_type == "move") {
+        } else if (messageData.type === 'error' && messageData.content.ref_type == "move") {
             setGame(previousState);
             console.log("reverting move")
         }
@@ -59,7 +59,7 @@ const Game: React.FC = () => {
 
     function makeAMove(move: { from: string; to: string; promotion?: string }): Move | null {
         const gameCopy = new Chess(game.fen());
-        setPreviousState(gameCopy)
+        setPreviousState(new Chess(gameCopy.fen()));
         const result = gameCopy.move(move);
 
         if (result) {
