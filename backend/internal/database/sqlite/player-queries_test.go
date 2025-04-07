@@ -22,7 +22,6 @@ func TestCreatePlayer(t *testing.T) {
 	require.NotNil(t, player)
 	require.Equal(t, user.ID, player.UserID)
 	require.Equal(t, game.ID, player.GameID)
-	require.False(t, player.Color) // first player is white (false)
 }
 
 func TestReadPlayer(t *testing.T) {

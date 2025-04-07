@@ -4,15 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/veetipihlava/shakki-peli/internal/models"
 )
-
-func getTestMove(gameID int64, notation string) models.Move {
-	return models.Move{
-		GameID:   gameID,
-		Notation: notation,
-	}
-}
 
 func TestCreateMove(t *testing.T) {
 	db, err := InitializeTestDatabase()

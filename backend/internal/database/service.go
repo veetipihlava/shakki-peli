@@ -19,3 +19,17 @@ func CreateTestLibSQLConnection() (*DatabaseService, *sql.DB, error) {
 
 	return db, database.Connection, nil
 }
+
+// Creates the database connection with libSQL and its service.
+func CreateLibSQLConnection(tursoDatabaseURL string, tursoAuthToken string) (*DatabaseService, *sql.DB, error) {
+	database, err := sqlite.ConnectDatabase(tursoDatabaseURL, tursoAuthToken)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	db := &DatabaseService{
+		Database: database,
+	}
+
+	return db, database.Connection, nil
+}

@@ -9,11 +9,6 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// The database implementation for libsql.
-type Database struct {
-	Connection *sql.DB
-}
-
 // Initializes the test database. This is intended for testing purposes.
 func InitializeTestDatabase() (*Database, error) {
 	db, err := sql.Open("sqlite3", ":memory:")
