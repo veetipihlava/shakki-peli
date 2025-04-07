@@ -21,6 +21,7 @@ type ErrorContent struct {
 
 type JoinGameContent struct {
 	UserID int64 `json:"user_id"`
+	Color  bool  `json:"color"`
 }
 
 type LeaveGameContent struct {
@@ -41,7 +42,7 @@ type ValidMoveContent struct {
 // The join message is broadcasted to all players in game
 func HandleJoinGame(ss sessionstore.SessionStore, ws *websocket.Conn, request ChessMessage) error {
 	gameID := request.GameID
-	userID := request.PlayerID
+	userID := request.UserID
 
 	// Verify player and game exists in memory
 	_, player, err := GetGameAndPlayerFromSessionStore(ss, gameID, userID)
@@ -61,7 +62,10 @@ func HandleJoinGame(ss sessionstore.SessionStore, ws *websocket.Conn, request Ch
 	}
 
 	// Broadcast join message to all players
-	content := JoinGameContent{UserID: userID}
+	content := JoinGameContent{
+		UserID: userID,
+		Color:  player.Color,
+	}
 	msg := NewMessage("join", content)
 	Broadcast(gameID, msg)
 	return nil
@@ -70,11 +74,10 @@ func HandleJoinGame(ss sessionstore.SessionStore, ws *websocket.Conn, request Ch
 // handleMoveRequest processes a move request from a player
 func HandleMove(ss sessionstore.SessionStore, ws *websocket.Conn, request ChessMessage) error {
 	gameID := request.GameID
-	//userID := request.PlayerID
 	notation := request.Content
 
 	// Verify player and game exist in memory
-	_, player, err := GetGameAndPlayerFromSessionStore(ss, request.GameID, request.PlayerID)
+	_, player, err := GetGameAndPlayerFromSessionStore(ss, request.GameID, request.UserID)
 	if err != nil {
 		msg := NewErrorMessage("move", "Error verifying player")
 		Respond(ws, msg)

@@ -40,9 +40,9 @@ export const JoinGame = async (gameID: string) => {
   }
 
   const data = await response.json();
-  const playerID = data.player_id;
+  const userID = data.user_id;
 
-  sessionStorage.setItem('playerID', playerID);
+  sessionStorage.setItem('userID', userID);
 };
 
 export default Join;

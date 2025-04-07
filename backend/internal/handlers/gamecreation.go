@@ -56,7 +56,7 @@ func validateGame(gameID int64) error {
 }
 
 type JoinGameResponse struct {
-	PlayerID int64 `json:"player_id"`
+	UserID int64 `json:"user_id"`
 }
 
 // Creates a new player to PersistentStorage and saves them to SessionStore
@@ -84,7 +84,7 @@ func JoinAsPlayer(c echo.Context) error {
 	redis.SavePlayer(player)
 
 	response := JoinGameResponse{
-		PlayerID: player.UserID,
+		UserID: player.UserID,
 	}
 
 	return c.JSON(http.StatusOK, response)

@@ -18,10 +18,10 @@ var Upgrader = websocket.Upgrader{
 }
 
 type ChessMessage struct {
-	Type     string `json:"type"`
-	GameID   int64  `json:"game_id"`
-	PlayerID int64  `json:"player_id"`
-	Content  string `json:"content"`
+	Type    string `json:"type"`
+	GameID  int64  `json:"game_id"`
+	UserID  int64  `json:"user_id"`
+	Content string `json:"content"`
 }
 
 // UpgradeJoinGame handles WebSocket connection for game participation

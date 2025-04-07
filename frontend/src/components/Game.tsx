@@ -4,7 +4,7 @@ import { Chessboard } from "react-chessboard";
 import { Chess, Move } from "chess.js";
 
 const Game: React.FC = () => {
-    const playerID: Number = Number(sessionStorage.getItem("playerID"));
+    const userID: Number = Number(sessionStorage.getItem("userID"));
     const gameID: Number = Number(sessionStorage.getItem("gameID"));
 
     const socketUrl = 'ws://localhost:8080/ws/game';
@@ -19,7 +19,7 @@ const Game: React.FC = () => {
             const joinMessage = {
               type: 'join',
               game_id: Number(gameID),
-              player_id: Number(playerID),
+              user_id: Number(userID),
               Content: "placeholder_name",
             };
 
@@ -30,16 +30,15 @@ const Game: React.FC = () => {
     }, [readyState]);
 
     useEffect(() => {
-        if (lastMessage == null) {
-            return;
-        }
+        if (!lastMessage) return;
 
-        const messageData = lastMessage.data
+        const messageData = JSON.parse(lastMessage.data)
         console.log("Recieved: ", messageData);
 
-        if (messageData.type === 'join') {
-            if (messageData.player_id === playerID) {
-                const color = messageData.content === "true" ? "white" : "black";
+        if (messageData.type === "join") {
+            if (messageData.content.user_id === userID) {
+                const color = messageData.content.color === true ? "white" : "black";
+                console.log(color);
                 setColor(color);
             }
         } else if (messageData.type === 'move') {
@@ -48,14 +47,19 @@ const Game: React.FC = () => {
             if (!move) {
                 console.log("Invalid move from server: ", serverMove);
             }
-        } 
+        } else if (messageData.type === 'error' && messageData.ref_type == "move") {
+            setGame(previousState);
+            console.log("reverting move")
+        }
     }, [lastMessage]);
 
     const [color, setColor] = useState<"white" | "black">("white");
     const [game, setGame] = useState(new Chess());
+    const [previousState, setPreviousState] = useState(new Chess());
 
     function makeAMove(move: { from: string; to: string; promotion?: string }): Move | null {
         const gameCopy = new Chess(game.fen());
+        setPreviousState(gameCopy)
         const result = gameCopy.move(move);
 
         if (result) {
@@ -83,7 +87,7 @@ const Game: React.FC = () => {
         const messageObject = {
             type: 'move',
             game_id: gameID,
-            player_id: playerID,
+            user_id: userID,
             content: convertToServerMove(move),
         };
 
