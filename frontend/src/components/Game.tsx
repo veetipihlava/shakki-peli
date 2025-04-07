@@ -8,7 +8,6 @@ const Game: React.FC = () => {
     const gameID: Number = Number(sessionStorage.getItem("gameID"));
 
     const socketUrl = 'ws://localhost:8080/ws/game';
-    const [messageHistory, setMessageHistory] = useState<MessageEvent<any>[]>([]);
     const { sendMessage, lastMessage, readyState } = useWebSocket(socketUrl, {
         shouldReconnect: () => true,
         reconnectAttempts: 10,
@@ -35,8 +34,8 @@ const Game: React.FC = () => {
             return;
         }
 
-        const messageData = JSON.parse(lastMessage.data);
-        setMessageHistory((prev) => prev.concat(messageData));
+        const messageData = lastMessage.data
+        console.log("Recieved: ", messageData);
 
         if (messageData.type === 'join') {
             if (messageData.player_id === playerID) {
@@ -72,9 +71,9 @@ const Game: React.FC = () => {
 
     function onDrop(sourceSquare: string, targetSquare: string): boolean {
         const move = makeAMove({
-        from: sourceSquare,
-        to: targetSquare,
-        promotion: "q",
+            from: sourceSquare,
+            to: targetSquare,
+            promotion: "q",
         });
 
         if (!move) {
@@ -101,21 +100,14 @@ const Game: React.FC = () => {
             <div>Game ID: {String(gameID)}</div>
             <Chessboard position={game.fen()} onPieceDrop={onDrop} isDraggablePiece={isDraggablePiece} boardOrientation={color} />
             {lastMessage ? <div>Last message: {lastMessage.data}</div> : null}
-            <h2>debug message history</h2>
-            <ul>
-                {messageHistory.map((message, idx) => (
-                    <li key={idx}>{message ? message.data : null}</li>
-                ))}
-            </ul>
         </div>
     );
 };
 
 function convertToServerMove(move: Move): string {
     let notation: string = move.piece.charAt(0)
-    notation += move.before
-    notation += move.after
-    console.log(notation.toLowerCase())
+    notation += move.from
+    notation += move.to
     return notation.toLowerCase();
 }
 

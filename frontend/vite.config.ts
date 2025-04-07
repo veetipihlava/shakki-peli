@@ -6,10 +6,7 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
-    strictPort: true
-  },
-  plugins: [react()],
-  /* server: {
+    strictPort: true,
     proxy: {
       '/game': {
         target: 'http://localhost:8080',
@@ -23,5 +20,6 @@ export default defineConfig({
         secure: false,
       },
     },
-  }, */
+  },
+  plugins: [react()],
 })

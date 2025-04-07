@@ -5,13 +5,12 @@ const Join = () => {
   const navigate = useNavigate();
   const [gameID, setGameID] = useState<string>("");
 
-  const joinGame = (e: FormEvent) => {
+  const joinGame = async (e: FormEvent) => {
     e.preventDefault();
 
     sessionStorage.setItem('gameID', gameID);
 
-    JoinGame(gameID);
-    
+    await JoinGame(gameID);
     navigate(`/game`);
   };
   

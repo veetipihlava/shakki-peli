@@ -15,5 +15,4 @@ func SetupRoutes(e *echo.Echo) {
 	e.GET("/games/:game-id", handlers.HandleGetFullGame)
 
 	e.GET("/ws/game", websockets.UpgradeConnection)
-
 }
