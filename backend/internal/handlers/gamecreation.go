@@ -61,7 +61,7 @@ type JoinGameResponse struct {
 
 // Creates a new player to PersistentStorage and saves them to SessionStore
 func JoinAsPlayer(c echo.Context) error {
-	user := c.Get(middleware.UserIDContextName).(*models.User)
+	user := c.Get(middleware.UserContextName).(*models.User)
 	db := c.Get(middleware.DatabaseContextName).(*database.DatabaseService)
 	redis := c.Get(middleware.RedisContextName).(sessionstore.SessionStore)
 
