@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/labstack/echo/v4"
+	emw "github.com/labstack/echo/v4/middleware"
 	"github.com/veetipihlava/shakki-peli/internal/database"
 	"github.com/veetipihlava/shakki-peli/internal/middleware"
 	"github.com/veetipihlava/shakki-peli/internal/routes"
@@ -28,6 +29,7 @@ func main() {
 	}
 	defer redis.Close()
 	e := echo.New()
+	e.Use(emw.Logger())
 
 	e.Use(middleware.WithContext(middleware.DatabaseContextName, db))
 	e.Use(middleware.WithContext(middleware.RedisContextName, redis))

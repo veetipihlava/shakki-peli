@@ -93,6 +93,7 @@ func HandleMove(ss sessionstore.SessionStore, ws *websocket.Conn, request ChessM
 	// Chess validator to check if move is valid
 	validationResult, updatePieces := chess.ValidateMove(pieces, notation, player.Color)
 	if !validationResult.IsValidMove {
+		log.Println(validationResult)
 		msg := NewErrorMessage("move", "Move not valid")
 		Respond(ws, msg)
 		return nil
@@ -127,18 +128,18 @@ func HandleLeave(ss sessionstore.SessionStore, ws *websocket.Conn) error {
 	// Fetch the corresponding player and game from the conneciton
 	player, err := connections.ConnManager.GetPlayerByConnection(ws)
 	if err != nil {
-		log.Printf("Could not read player: %v", err)
+		return err
 	}
 
 	// Remove connection
 	err = connections.ConnManager.RemoveConnection(ws)
 	if err != nil {
-		log.Printf("Could not delete player: %v", err)
+		return err
 	}
 
 	conns, err := connections.ConnManager.GetConnectionsInGame(player.GameID)
 	if err != nil {
-		log.Printf("Could not check player connections after removing player: %v", err)
+		return err
 	}
 
 	if len(conns) == 0 {
@@ -151,5 +152,6 @@ func HandleLeave(ss sessionstore.SessionStore, ws *websocket.Conn) error {
 	content := LeaveGameContent{UserID: player.UserID}
 	msg := NewMessage("closing", content)
 	Broadcast(player.GameID, msg)
+
 	return nil
 }

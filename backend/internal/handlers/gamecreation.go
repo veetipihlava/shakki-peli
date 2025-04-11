@@ -78,7 +78,7 @@ func JoinAsPlayer(c echo.Context) error {
 
 	player, err := db.CreatePlayer(user.ID, gameID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError)
+		return err
 	}
 
 	redis.SavePlayer(player)

@@ -34,7 +34,7 @@ func UseUser(next echo.HandlerFunc) echo.HandlerFunc {
 		if err != nil {
 			if err == http.ErrNoCookie {
 				user, err := db.CreateUser("non-authenticated-user")
-				cookie := &http.Cookie{
+				cookie = &http.Cookie{
 					Name:     userIDCookieName,
 					Value:    strconv.FormatInt(user.ID, 10),
 					MaxAge:   int(time.Hour * 24 * 365),
@@ -49,8 +49,6 @@ func UseUser(next echo.HandlerFunc) echo.HandlerFunc {
 
 				c.SetCookie(cookie)
 			}
-
-			return err
 		}
 
 		userID, err := strconv.ParseInt(cookie.Value, 10, 64)

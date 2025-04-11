@@ -38,10 +38,14 @@ func UpgradeConnection(c echo.Context) error {
 		_, msg, err := ws.ReadMessage()
 		if err != nil {
 			if websocket.IsCloseError(err, websocket.CloseGoingAway, websocket.CloseNormalClosure) {
-				HandleLeave(redis, ws)
+				err := HandleLeave(redis, ws)
+				if err != nil {
+					return err
+				}
 			} else {
 				log.Printf("WebSocket error: %v", err)
 			}
+
 			return nil
 		}
 

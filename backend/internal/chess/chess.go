@@ -34,6 +34,7 @@ func ValidateMove(pieces []models.Piece, move string, color bool) (models.Valida
 	if consumedUpdate.Piece.ID != 0 {
 		updates = append(updates, consumedUpdate)
 	}
+
 	// 4. Update the position of the moved Piece
 	updatedPiece := GetUpdatedPiece(toFile, toRank, piece)
 	updates = append(updates, updatedPiece)
@@ -64,9 +65,16 @@ func getPieceIfNotationValid(move string, pieces []models.Piece, color bool) (*m
 
 	// 2. Does the position contain the piece from the notation (same type and color)?
 	piece := getPiece(fromFile, fromRank, pieces)
-	if piece == nil || piece.Name != pieceName || piece.Color != color {
+	if piece == nil {
 		return nil, -1, -1
 	}
+	if piece.Name != pieceName {
+		return nil, -1, -1
+	}
+	if piece.Color != color {
+		return nil, -1, -1
+	}
+
 	// 3. If yes, return the piece and it's next position for validation
 	return piece, toFile, toRank
 }
@@ -122,10 +130,10 @@ func parseMoveFromString(move string) (fromFile, fromRank, toFile, toRank int, p
 	}
 
 	pieceName = string(move[0])
-	fromFile = int(move[1]-'a') + 1
-	fromRank = int(move[2] - '1')
-	toFile = int(move[3]-'a') + 1
-	toRank = int(move[4] - '1')
+	fromFile = int(move[1]-'A') + 1
+	fromRank = int(move[2] - '0')
+	toFile = int(move[3]-'A') + 1
+	toRank = int(move[4] - '0')
 
 	if fromFile < 1 || fromFile > 8 || toFile < 1 || toFile > 8 ||
 		fromRank < 1 || fromRank > 8 || toRank < 1 || toRank > 8 {
