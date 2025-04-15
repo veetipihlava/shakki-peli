@@ -7,11 +7,11 @@ const Game: React.FC = () => {
     const userID: Number = Number(sessionStorage.getItem("userID"));
     const gameID: Number = Number(sessionStorage.getItem("gameID"));
 
-    const socketUrl = 'ws://localhost:8080/ws/game';
+    const socketUrl = 'ws://localhost:8080/ws';
     const { sendMessage, lastMessage, readyState } = useWebSocket(socketUrl, {
         shouldReconnect: () => true,
-        reconnectAttempts: 10,
-        reconnectInterval: 3000,
+        // reconnectAttempts: 10,
+        // reconnectInterval: 3000,
     });
 
     useEffect(() => {
@@ -26,6 +26,8 @@ const Game: React.FC = () => {
             const json = JSON.stringify(joinMessage);
             console.log("Sending: ", json);
             sendMessage(json);
+        } else {
+            console.log(readyState)
         }
     }, [readyState]);
 
@@ -38,14 +40,15 @@ const Game: React.FC = () => {
         if (messageData.type === "join") {
             if (messageData.content.user_id === userID) {
                 const color = messageData.content.color === true ? "white" : "black";
-                console.log(color);
                 setColor(color);
             }
         } else if (messageData.type === 'move') {
-            const serverMove = messageData.content;
-            const move = makeAMove(serverMove);
-            if (!move) {
-                console.log("Invalid move from server: ", serverMove);
+            const serverMove = convertFromServerMove(messageData.content.move);
+            if (messageData.content.user_id !== userID) {
+                const move = makeAMove(serverMove);
+                if (!move) {
+                    console.log("Invalid move from server: ", serverMove);
+                }
             }
         } else if (messageData.type === 'error' && messageData.content.ref_type == "move") {
             setGame(previousState);
@@ -102,7 +105,7 @@ const Game: React.FC = () => {
     return (
         <div>
             <div>Game ID: {String(gameID)}</div>
-            <Chessboard position={game.fen()} onPieceDrop={onDrop} isDraggablePiece={isDraggablePiece} boardOrientation={color} />
+            <Chessboard position={game.fen()} onPieceDrop={onDrop} isDraggablePiece={isDraggablePiece} boardOrientation={color} boardWidth={500} />
             {lastMessage ? <div>Last message: {lastMessage.data}</div> : null}
         </div>
     );
@@ -112,7 +115,15 @@ function convertToServerMove(move: Move): string {
     let notation: string = move.piece.charAt(0)
     notation += move.from
     notation += move.to
-    return notation.toLowerCase();
+    return notation.toUpperCase();
+}
+
+function convertFromServerMove(serverMove: string): { from: string; to: string; promotion?: string } {
+    const lowerCaseMove = serverMove.toLowerCase();
+    const from = lowerCaseMove.slice(1, 3)
+    const to = lowerCaseMove.slice(3, 5)
+
+    return { from, to, promotion: "q" };
 }
 
 export default Game;
