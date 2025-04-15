@@ -42,7 +42,15 @@ func ValidateMove(pieces []models.Piece, move string, color bool, moves []models
 
 	//5. Is either King in check?
 	updatedPieces := applyUpdates(pieces, updates)
-	if kingInCheck(updatedPieces, !color) || kingInCheck(updatedPieces, color) {
+
+	//5.1 Your king should not be in check after your move, invalid
+	if kingInCheck(updatedPieces, color) {
+		validationResult.IsValidMove = false
+		return validationResult, nil
+	}
+
+	// 5.2 Is the enemy king in check
+	if kingInCheck(updatedPieces, !color) {
 		validationResult.KingInCheck = true
 	}
 

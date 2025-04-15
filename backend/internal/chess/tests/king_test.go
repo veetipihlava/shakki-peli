@@ -50,7 +50,7 @@ func Test_King_CaptureEnemy(t *testing.T) {
 	}
 }
 
-func Test_King_MoveIntoCheck_Flagged(t *testing.T) {
+func Test_King_MoveIntoCheck_Invalid(t *testing.T) {
 	pieces := []models.Piece{
 		{ID: 6, GameID: 1, Color: true, Name: "K", Rank: 4, File: 4},
 		{ID: 7, GameID: 1, Color: false, Name: "B", Rank: 6, File: 6},
@@ -58,11 +58,8 @@ func Test_King_MoveIntoCheck_Flagged(t *testing.T) {
 	moves := []models.Move{}
 
 	res, _ := chess.ValidateMove(pieces, "Kd4e5", true, moves)
-	if !res.IsValidMove {
-		t.Errorf("Expected king to be able to move into check. Got: %+v", res)
-	}
-	if !res.KingInCheck {
-		t.Errorf("Expected KingInCheck to be true, got: %+v", res)
+	if res.IsValidMove {
+		t.Errorf("Expected king not to be able to move into check. Got: %+v", res)
 	}
 }
 
@@ -97,13 +94,15 @@ func Test_Bishop_Capture_Causes_KingInCheck(t *testing.T) {
 func Test_King_IsCheckmate_GameOverTriggered(t *testing.T) {
 	pieces := []models.Piece{
 		{ID: 1, GameID: 1, Color: false, Name: "K", Rank: 1, File: 1}, // Black king a1
-		{ID: 2, GameID: 1, Color: true, Name: "R", Rank: 2, File: 1},  // White rook a2
-		{ID: 3, GameID: 1, Color: true, Name: "K", Rank: 2, File: 2},  // White king b2
+		{ID: 2, GameID: 1, Color: true, Name: "R", Rank: 2, File: 2},  // White rook on b2
+		{ID: 3, GameID: 1, Color: true, Name: "K", Rank: 3, File: 1},  // White king on a3
+		{ID: 4, GameID: 1, Color: false, Name: "P", Rank: 2, File: 1}, // Black pawn blocks a2
+		{ID: 5, GameID: 1, Color: false, Name: "P", Rank: 1, File: 2}, // Black pawn blocks b1
 	}
 	moves := []models.Move{}
 
-	// White rook moves to a2 to deliver checkmate (king can't escape, is blocked)
-	res, _ := chess.ValidateMove(pieces, "Ra2a1", true, moves)
+	// Rook moves to a2, putting king in check — king cannot escape, it's checkmate
+	res, _ := chess.ValidateMove(pieces, "Rb2a2", true, moves)
 
 	if !res.IsValidMove {
 		t.Errorf("Expected move to be valid. Got: %+v", res)
@@ -115,15 +114,16 @@ func Test_King_IsCheckmate_GameOverTriggered(t *testing.T) {
 
 func Test_King_IsCheckmate_WithFriendlyBlockers(t *testing.T) {
 	pieces := []models.Piece{
-		{ID: 1, GameID: 1, Color: false, Name: "K", Rank: 1, File: 2}, // Black king b1
-		{ID: 2, GameID: 1, Color: false, Name: "P", Rank: 1, File: 1}, // Pawn a1
-		{ID: 3, GameID: 1, Color: false, Name: "P", Rank: 1, File: 3}, // Pawn c1
-		{ID: 4, GameID: 1, Color: true, Name: "R", Rank: 2, File: 2},  // White rook b2
-		{ID: 5, GameID: 1, Color: true, Name: "K", Rank: 3, File: 2},  // White king b3 (defends rook)
+		{ID: 1, GameID: 1, Color: false, Name: "K", Rank: 1, File: 2}, // Black king on b1
+		{ID: 2, GameID: 1, Color: false, Name: "P", Rank: 1, File: 1}, // Friendly pawn on a1
+		{ID: 3, GameID: 1, Color: false, Name: "P", Rank: 1, File: 3}, // Friendly pawn on c1
+		{ID: 4, GameID: 1, Color: true, Name: "R", Rank: 3, File: 2},  // White rook on b3 (about to move)
+		{ID: 5, GameID: 1, Color: true, Name: "K", Rank: 3, File: 3},  // White king on c3 (protects rook)
 	}
 	moves := []models.Move{}
 
-	res, _ := chess.ValidateMove(pieces, "Rb2b1", true, moves)
+	// Move rook from b3 to b2, delivering checkmate
+	res, _ := chess.ValidateMove(pieces, "Rb3b2", true, moves)
 
 	if !res.IsValidMove {
 		t.Errorf("Expected move to be valid. Got: %+v", res)
@@ -132,6 +132,7 @@ func Test_King_IsCheckmate_WithFriendlyBlockers(t *testing.T) {
 		t.Errorf("Expected Checkmate to be true. Got: %+v", res.GameOver)
 	}
 }
+
 func Test_King_EscapesCheck_ByBlockingPiece(t *testing.T) {
 	pieces := []models.Piece{
 		{ID: 1, GameID: 1, Color: false, Name: "K", Rank: 1, File: 1}, // Black king a1
