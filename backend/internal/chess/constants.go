@@ -1,6 +1,11 @@
 package chess
 
-import "github.com/veetipihlava/shakki-peli/internal/models"
+import (
+	"log"
+	"strings"
+
+	"github.com/veetipihlava/shakki-peli/internal/models"
+)
 
 // The boolean for white player.
 const White bool = true
@@ -47,4 +52,47 @@ func GetInitialChessGamePieces(gameID int64) []models.Piece {
 	}
 
 	return pieces
+}
+
+func LogGameState(pieces []models.Piece, moves []models.Move) {
+	var board [8][8]string
+
+	// Initialize board with "0"
+	for r := range board {
+		for f := range board[r] {
+			board[r][f] = "0"
+		}
+	}
+
+	// Place pieces
+	for _, p := range pieces {
+		rankIndex := 8 - p.Rank
+		fileIndex := p.File - 1
+
+		char := p.Name
+		if !p.Color {
+			char = strings.ToLower(char)
+		}
+
+		board[rankIndex][fileIndex] = char
+	}
+
+	log.Println("====== CURRENT BOARD STATE ======")
+	for i, row := range board {
+		rank := 8 - i
+		log.Printf("%d | %s", rank, strings.Join(row[:], " "))
+	}
+	log.Println("   ------------------------")
+	log.Println("    A B C D E F G H")
+
+	// Log moves
+	log.Println("====== MOVE HISTORY ======")
+	if len(moves) == 0 {
+		log.Println("No moves made yet.")
+	} else {
+		for i, m := range moves {
+			log.Printf("%d. %s", i+1, m.Notation)
+		}
+	}
+	log.Println("=================================")
 }

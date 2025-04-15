@@ -108,13 +108,12 @@ func RemovePlayerFromSessionStore(ss sessionstore.SessionStore, gameID int64, us
 
 func GetAsValidMoveContent(userID int64, result models.ValidationResult) ValidMoveContent {
 	return ValidMoveContent{
-		Move:         result.Move,
-		UserID:       userID,
-		KingInCheck:  result.KingInCheck,
-		Draw:         result.GameOver.Draw,
-		Checkmate:    result.GameOver.Checkmate,
-		KingConsumed: result.GameOver.KingConsumed,
-		WinnerColor:  result.GameOver.WinnerColor,
+		Move:        result.Move,
+		UserID:      userID,
+		KingInCheck: result.KingInCheck,
+		Draw:        result.GameOver.Draw,
+		Checkmate:   result.GameOver.Checkmate,
+		WinnerColor: result.GameOver.WinnerColor,
 	}
 }
 

@@ -43,10 +43,9 @@ type ValidationResult struct {
 }
 
 type GameOver struct {
-	Draw         bool `json:"draw"`
-	Checkmate    bool `json:"checkmate"`
-	KingConsumed bool `json:"king_consumed"`
-	WinnerColor  bool `json:"winner_color"`
+	Draw        bool `json:"draw"`
+	Checkmate   bool `json:"checkmate"`
+	WinnerColor bool `json:"winner_color"`
 }
 
 // PieceUpdate contains the Piece, a boolean if it needs to be deleted and a TransformPiece string if the Piece needs to be transformed (pawn promotion)

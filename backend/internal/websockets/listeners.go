@@ -90,8 +90,13 @@ func HandleMove(ss sessionstore.SessionStore, ws *websocket.Conn, request ChessM
 		return err
 	}
 
+	moves, err := ss.GetMoves(gameID)
+	if err != nil {
+		return err
+	}
+
 	// Chess validator to check if move is valid
-	validationResult, updatePieces := chess.ValidateMove(pieces, notation, player.Color)
+	validationResult, updatePieces := chess.ValidateMove(pieces, notation, player.Color, moves)
 	if !validationResult.IsValidMove {
 		log.Println(validationResult)
 		msg := NewErrorMessage("move", "Move not valid")
@@ -101,6 +106,28 @@ func HandleMove(ss sessionstore.SessionStore, ws *websocket.Conn, request ChessM
 
 	// Save the valid move to stack
 	validMove := GetAsMove(gameID, validationResult.Move)
+
+	// Update the pieces in session store
+	for _, update := range updatePieces {
+		if update.DeletePiece {
+			err := ss.RemovePiece(&update.Piece)
+			if err != nil {
+				log.Printf("Failed to delete piece %d: %v", update.Piece.ID, err)
+			}
+			continue
+		}
+
+		// Handle promotion
+		if update.TransformPiece != "" {
+			update.Piece.Name = update.TransformPiece
+		}
+
+		_, err := ss.UpdatePiece(&update.Piece)
+		if err != nil {
+			log.Printf("Failed to update piece %d: %v", update.Piece.ID, err)
+		}
+	}
+
 	err = ss.SaveMove(validMove)
 	if err != nil {
 		msg := NewErrorMessage("move", "Error occured saving move")
