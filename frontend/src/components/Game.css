@@ -1,0 +1,110 @@
+.game-window-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 100vw;
+  max-width: 100vw;
+}
+
+.game-info-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.game-board-container {
+  margin: 25px;
+  min-width: 500px;
+  max-width: 500px;
+}
+
+.game-invite-container {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  margin: 20px;
+  font-size: large;
+  font-weight: bold;
+  color: aliceblue;
+  background-color: seagreen;
+  border-radius: 15px;
+}
+
+.check-warning {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 1rem;
+  font-weight: bold;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-all;
+  background-color: yellow;
+  border-radius: 15px;
+}
+
+.leave-game-button {
+  margin: 20px;
+  padding: 10px 20px;
+  font-size: large;
+  font-weight: bold;
+  color: white;
+  background-color: crimson;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.leave-game-button:hover {
+  background-color: darkred;
+}
+
+.timer {
+  font-size: large;
+  font-weight: bold;
+  color: white;
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.overlay-card {
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.overlay-card h2 {
+  margin-bottom: 10px;
+}
+
+.overlay-card p {
+  margin-bottom: 20px;
+}
+
+.overlay-card button {
+  padding: 10px 20px;
+  font-size: large;
+  font-weight: bold;
+  color: white;
+  background-color: seagreen;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.overlay-card button:hover {
+  background-color: darkgreen;
+}

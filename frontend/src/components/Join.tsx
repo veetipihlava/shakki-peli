@@ -1,6 +1,6 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-
+import "./Home.css"
 const Join = () => {
   const navigate = useNavigate();
   const [gameID, setGameID] = useState<string>("");
@@ -13,16 +13,22 @@ const Join = () => {
     await JoinGame(gameID);
     navigate(`/game`);
   };
-  
+
   return (
-    <form onSubmit={joinGame} className="message-form">
-        <input
-          type="text"
-          value={gameID}
-          onChange={(e) => setGameID(e.target.value)}
-          placeholder="Game ID"
-        />
-        <button type="submit">Join</button>
+    <form onSubmit={joinGame} className="game-join-form">
+      <input
+        type="text"
+        className='game-join-input'
+        value={gameID}
+        onChange={(e) => setGameID(e.target.value)}
+        placeholder="Game ID"
+      />
+      <button
+        type="submit"
+        className='game-join-btn'
+      >
+        Join
+      </button>
     </form>
   );
 };

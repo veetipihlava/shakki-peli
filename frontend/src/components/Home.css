@@ -1,0 +1,78 @@
+.game-options-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.game-card-container {
+  display: flex;
+  flex-direction: column;
+  height: 20vh;
+  min-height: 200px;
+  width: 50vw;
+  min-width: 400px;
+  max-width: 500px;
+  margin: 40px auto;
+  padding: 24px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.game-card-title {
+  font-size: 1.5rem;
+  margin-bottom: 3rem;
+  color: #333;
+}
+
+.game-card-buttons {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-content: center;
+  gap: 1rem;
+  height: 4rem;
+}
+
+.game-card-button:hover {
+  background-color: #005200;
+}
+
+.game-create-button {
+  min-width: 170px;
+}
+
+.game-join-form {
+  display: flex;
+  flex-direction: row;
+}
+
+.game-join-input {
+  background-color: #e6e6e6;
+  border: none;
+  border-top-left-radius: 15px;
+  border-bottom-left-radius: 15px;
+}
+
+.game-join-input:focus {
+  outline: none;
+
+  background-color: #00530050;
+  color: #fefefe;
+}
+
+.game-join-input:hover {
+  background-color: #00530050;
+  color: #fefefe;
+}
+
+::placeholder {
+  padding-left: 2em;
+  font-size: large;
+}
+
+.game-join-btn {
+  border-top-left-radius: 0px;
+  border-bottom-left-radius: 0px;
+}

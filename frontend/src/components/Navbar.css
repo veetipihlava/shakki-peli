@@ -1,0 +1,15 @@
+.navbar {
+  width: 100%;
+  background-color: #005200;
+  overflow: auto;
+}
+
+/* Navbar links */
+.navbar a {
+  float: left;
+  text-align: center;
+  padding: 1em;
+  color: white;
+  text-decoration: none;
+  font-size: x-large;
+}

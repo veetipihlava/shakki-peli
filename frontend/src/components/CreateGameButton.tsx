@@ -21,14 +21,16 @@ const CreateGameButton = () => {
     const gameID = data.game_id;
 
     sessionStorage.setItem('gameID', gameID);
-    
+
     await JoinGame(gameID);
 
     navigate(`/game`);
   };
 
   return (
-    <button onClick={handleCreateGame}>
+    <button
+      className='game-create-button'
+      onClick={handleCreateGame}>
       Create New Game
     </button>
   );
